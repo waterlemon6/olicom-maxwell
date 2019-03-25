@@ -20,7 +20,7 @@ struct printer_dev {
 	spinlock_t lock; /* lock this structure */
 	struct mutex lock_printer_io; /* lock buffer lists during read/write calls */
 	struct usb_gadget *gadget;
-	char interface;
+	signed char interface;
 	struct usb_ep *in_ep, *out_ep;
 
 	struct list_head rx_reqs;	/* List of free RX structs */
@@ -215,6 +215,9 @@ static void setup_rx_reqs(struct printer_dev *dev)
 {
 	struct usb_request *req;
 
+	if (dev->interface < 0)
+		return;
+
 	while (likely(!list_empty(&dev->rx_reqs))) {
  		int error;
 
@@ -235,7 +238,7 @@ static void setup_rx_reqs(struct printer_dev *dev)
 		error = usb_ep_queue(dev->out_ep, req, GFP_ATOMIC);
 		spin_lock(&dev->lock);
  		if (error) {
- 			printk(KERN_ALERT "[printer device]""rx submit --> %d\n", error);
+ 			printk(KERN_ALERT "[printer device]""rx submit --> %d, interface: %d.\n", error, dev->interface);
  			list_add(&req->list, &dev->rx_reqs);
  			break;
  		}
