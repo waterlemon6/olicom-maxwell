@@ -58,18 +58,9 @@ int main() {
     char command[1024];
     memset(command, 0, 1024);
     sprintf(command,
-            "insmod printer_device.ko idVendor=0x%.4x idProduct=0x%.4x iManufacturer=%s iProduct=%s iSerialNumber=%s iPNPstring=%s",
+            "insmod printer_device.ko idVendor=0x%.4x idProduct=0x%.4x iManufacturer=\'\"%s\"\' "
+                    "iProduct=\'\"%s\"\' iSerialNumber=\'\"%s\"\' iPNPstring=\'\"%s\"\'",
             VID, PID, manufacturerString.str, productString.str, serialString.str, deviceID.str);
-
-    for (size_t i = 0; i < strlen(command); i++) {
-        if (command[i] == ';') {
-            size_t length = strlen(&command[i]) + 1;
-            while (length--)
-                command[i+length] = command[i+length-1];
-            command[i] = '\\';
-            i++;
-        }
-    }
 
     //printf("command:\n %s\n\n", command);
     fflush(stdout);

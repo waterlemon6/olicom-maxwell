@@ -1335,13 +1335,13 @@ static const struct usb_device_id usblp_ids[] = {
 MODULE_DEVICE_TABLE(usb, usblp_ids);
 
 static struct usb_driver usblp_driver = {
-	.name =		"usblp",
-	.probe =	usblp_probe,
-	.disconnect =	usblp_disconnect,
-	.suspend =	usblp_suspend,
-	.resume =	usblp_resume,
-	.id_table =	usblp_ids,
-	.supports_autosuspend =	1,
+	.name = "usblp",
+	.probe = usblp_probe,
+	.disconnect = usblp_disconnect,
+	.suspend = usblp_suspend,
+	.resume = usblp_resume,
+	.id_table = usblp_ids,
+	.supports_autosuspend = 1,
 };
 
 module_usb_driver(usblp_driver);
