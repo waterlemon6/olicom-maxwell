@@ -72,11 +72,19 @@ int main(int argc, char *argv[]) {
         case 'S':
             backdoor = 'S'; // Scan
             break;
+        case 'd':
+        case 'D':
+            backdoor = 'D'; // Dormancy
+            break;
+        case 'u':
+        case 'U':
+            backdoor = 'U'; // Update
+            break;
         case 0:
             break;
         default:
             cout << "Input backdoor error." << endl;
-            break;
+            return -1;
     }
 
     enum ExitEvent ret = MainProcess(dpi, color, videoPortOffset, backdoor);
@@ -230,14 +238,35 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
                 event = ActivateScanner(scanReq->position, (int)scanReq->length);
                 idle.push(scanReq);
             }
-            else if (backdoor == 'S') {
-                unsigned char buffer[22] = {
-                        0x01, 0x0B, 0x00, 0x00, 0x00,
-                        0x00, 0x00, 0x00, 0x00, 0x14, 0x40, 0x09, 0x60,
-                        0x00, 0x00, 0x00, 0x00, 0x14, 0x40, 0x09, 0x60,
-                        0x02
-                };
-                event = ActivateScanner(buffer, sizeof(buffer));
+            else {
+                switch (backdoor) {
+                    case 'S': {
+                        unsigned char buffer[22] = {
+                                0x01, 0x0B, 0x00, 0x00, 0x00,
+                                0x00, 0x00, 0x00, 0x00, 0x14, 0x40, 0x09, 0x60,
+                                0x00, 0x00, 0x00, 0x00, 0x14, 0x40, 0x09, 0x60,
+                                0x02
+                        };
+                        event = ActivateScanner(buffer, sizeof(buffer));
+                        break;
+                    }
+                    case 'D': {
+                        unsigned char buffer[5] = {
+                                0x01, 0x14, 0x00, 0x00, 0x00,
+                        };
+                        event = ActivateScanner(buffer, sizeof(buffer));
+                        break;
+                    }
+                    case 'U': {
+                        unsigned char buffer[5] = {
+                                0x01, 0x15, 0x00, 0x00, 0x00,
+                        };
+                        event = ActivateScanner(buffer, sizeof(buffer));
+                        break;
+                    }
+                    default:
+                        break;
+                }
             }
 
             scanReq = nullptr;

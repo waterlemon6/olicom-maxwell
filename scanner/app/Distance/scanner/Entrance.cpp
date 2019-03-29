@@ -199,7 +199,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x00, 0x00, 0x04};
+    unsigned char version[4] = {0x01, 0x00, 0x00, 0x05};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -217,6 +217,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
 
     switch (cmd_) {
         case SCANNER_COMMAND_SCAN:
+            printf("Go to scan.\n");
             SetCompressPage(data[21]);
             SetCompressEdge(&data[5]);
             ShowCompressMessage();
@@ -230,21 +231,25 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             break;
 
         case SCANNER_COMMAND_ADJUST_EXPOSURE:
+            printf("Go to adjust exposure.\n");
             LightAdjust(dpi_, color_);
             PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_DARK_SAMPLE:
+            printf("Go to do dark sample.\n");
             CorrectionAdjustNoPaper(dpi_, color_, videoPortOffset_);
             PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_BRIGHT_SAMPLE:
+            printf("Go to do bright sample.\n");
             CorrectionAdjust(dpi_, color_, videoPortOffset_);
             PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_SWITCH_MODE:
+            printf("Go to switch mode.\n");
             if(SetMode(data[3], data[4])) {
                 VideoPortSetScanMode(dpi_, color_);
                 ShowCompressMessage();
@@ -253,15 +258,18 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             break;
 
         case SCANNER_COMMAND_ADJUST_BRIGHTNESS:
+            printf("Go to adjust brightness.\n");
             SetColorMap(DeployColorMap(data[4]));
             PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_GET_VERSION:
+            printf("Go to get version.\n");
             PrinterHostQuickSend(version, sizeof(version));
             break;
 
         case SCANNER_COMMAND_UPDATE:
+            printf("Go to update.\n");
             if (Update())
                 event = EXIT_EVENT_UPDATE_OK;
             else
@@ -270,8 +278,8 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             break;
 
         case SCANNER_COMMAND_SLEEP:
-            PrinterHostQuickSend(&ack, 1);
             printf("Go to sleep.\n");
+            PrinterHostQuickSend(&ack, 1);
             system("echo standby > /sys/power/state");
             usleep(100*1000);
             break;
