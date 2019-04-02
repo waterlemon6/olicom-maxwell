@@ -6,6 +6,7 @@
 
 #include "main.h"
 #include "VideoCore.h"
+#include "VideoPort.h"
 
 void VideoCore::SetTime() {
     struct timeval tv {};
@@ -34,6 +35,7 @@ void VideoCore::SetTime() {
 int VideoCore::CalculateScanLines() {
     __time_t scanTime;
     struct timeval tv {};
+    int unit;
 
     /**
       * Same as above.
@@ -52,16 +54,27 @@ int VideoCore::CalculateScanLines() {
     switch (dpi_) {
         case 200:
             if (depth_ == 3)
-                return (int)((scanTime / SCAN_TIME_PER_LINE_200DPI_C3) / depth_);
-            else if (depth_ == 1)
-                return (int)((scanTime / SCAN_TIME_PER_LINE_200DPI_C1) / depth_);
+                unit = SCAN_TIME_PER_LINE_200D3;
+            else
+                unit = SCAN_TIME_PER_LINE_200D1;
+            break;
         case 300:
-            return (int)((scanTime / SCAN_TIME_PER_LINE_300DPI) / depth_);
+            if (depth_ == 3)
+                unit = SCAN_TIME_PER_LINE_300D3;
+            else
+                unit = SCAN_TIME_PER_LINE_300D1;
+            break;
         case 600:
-            return (int)((scanTime / SCAN_TIME_PER_LINE_600DPI) / depth_);
+            if (depth_ == 3)
+                unit = SCAN_TIME_PER_LINE_600D3;
+            else
+                unit = SCAN_TIME_PER_LINE_600D1;
+            break;
         default:
             return 0;
     }
+
+    return (int)(scanTime / unit);
 }
 
 void VideoCore::SetAttr(int dpi, int depth) {

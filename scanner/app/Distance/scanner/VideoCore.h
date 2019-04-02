@@ -1,13 +1,7 @@
 #ifndef __VIDEO_CORE_H__
 #define __VIDEO_CORE_H__
 
-#
 #include "Entrance.h"
-
-#define SCAN_TIME_PER_LINE_200DPI_C3 167 // 8000000 / 1333 = 6000 lines, 1000000 / 6000 = 167 usecs.
-#define SCAN_TIME_PER_LINE_200DPI_C1 167 // 8000000 / 2400 = 3333 lines, 1000000 / 3333 = 300 usecs
-#define SCAN_TIME_PER_LINE_300DPI 250 // 8000000 / 2000 = 4000 lines, 1000000 / 4000 = 250 usecs.
-#define SCAN_TIME_PER_LINE_600DPI 500 // 8000000 / 4000 = 2000 lines, 1000000 / 2000 = 500 usecs.
 
 struct VideoCoreAttr {
     int cisWidth;

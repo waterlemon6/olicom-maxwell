@@ -30,40 +30,40 @@ void VideoPort::WriteCorrectionChannel(unsigned char *srcK, unsigned char *srcB,
 
     switch (channel) {
         case CHANNEL_R:
-            cmd = 201;
+            cmd = FPGA_CHANNEL_R;
             break;
         case CHANNEL_G:
-            cmd = 202;
+            cmd = FPGA_CHANNEL_G;
             break;
         case CHANNEL_B:
-            cmd = 203;
+            cmd = FPGA_CHANNEL_B;
             break;
         case CHANNEL_GRAY:
-            cmd = 205;
+            cmd = FPGA_CHANNEL_GRAY;
             break;
         case CHANNEL_IR:
-            cmd = 204;
+            cmd = FPGA_CHANNEL_IR;
             break;
         default:
-            break;
+            return;
     }
 
-    WriteReg(2048, cmd);
+    WriteReg(FPGA_CORRS_REG, cmd);
     WriteData(srcK, (unsigned int)length);
     WriteData(srcB, (unsigned int)length);
-    WriteReg(2049, 100);
+    WriteReg(FPGA_CORRE_REG, 100);
 }
 
 void VideoPort::SetVideoMode(enum VideoMode mode) {
     switch (mode) {
         case VIDEO_MODE_NORMAL:
-            WriteReg(1552, 1);
+            WriteReg(FPGA_MODE_REG, FPGA_MODE_NORMAL);
             break;
         case VIDEO_MODE_NO_CORRECTION:
-            WriteReg(1552, 0);
+            WriteReg(FPGA_MODE_REG, FPGA_MODE_NOCORR);
             break;
         case VIDEO_MODE_GRADIENT:
-            WriteReg(1552, 3);
+            WriteReg(FPGA_MODE_REG, FPGA_MODE_GRADIENT);
             break;
         default:
             break;
@@ -79,43 +79,43 @@ unsigned char *VideoPort::GetOriginImagePos() {
 }
 
 void VideoPort::StartScan(unsigned short VD) {
-    WriteReg(1037, VD);
-    WriteReg(1551, 1);
+    WriteReg(FPGA_VD_REG, VD);
+    WriteReg(FPGA_SCAN_REG, 1);
 }
 
 void VideoPort::StopScan() {
-    WriteReg(1551, 0);
+    WriteReg(FPGA_SCAN_REG, 0);
 }
 
 void VideoPort::WriteConfigPara() {
     WriteReg(0, 0);
-    WriteReg(1024, 1333);//frequency
-    WriteReg(1026, 1000);//R1
-    WriteReg(1027, 1000);//R2
-    WriteReg(1028, 800);//G1
-    WriteReg(1029, 800);//G2
-    WriteReg(1030, 600);//B1
-    WriteReg(1031, 600);//B2
-    WriteReg(1032, 800);//IR1 light
-    WriteReg(1033, 800);//IR2 light
-    WriteReg(1034, 6);//color space
-    WriteReg(1035, 1);//dpi
-    WriteReg(1036, 7200);//height, no effect
-    WriteReg(1536, 150);//R1 gain, 0~255 ?
-    WriteReg(1537, 150);//G1 gain
-    WriteReg(1538, 150);//B1 gain
-    WriteReg(1539, 127);//R1 offset, -128~127 ?
-    WriteReg(1540, 127);//G1 offset
-    WriteReg(1541, 127);//B1 offset
-    WriteReg(1542, 150);//R2 gain
-    WriteReg(1543, 150);//G2 gain
-    WriteReg(1544, 150);//B2 gain
-    WriteReg(1545, 127);//R2 offset
-    WriteReg(1546, 127);//G2 offset
-    WriteReg(1547, 127);//B2 offset
-    WriteReg(1548, 15);//AD system
-    WriteReg(1549, 0);//AD AFE
-    WriteReg(1550, 1);//AD start
+    WriteReg(FPGA_FREQ_REG, FPGA_FREQ_200D1);
+    WriteReg(FPGA_R1_REG, 1000);
+    WriteReg(FPGA_R2_REG, 1000);
+    WriteReg(FPGA_G1_REG, 800);
+    WriteReg(FPGA_G2_REG, 800);
+    WriteReg(FPGA_B1_REG, 600);
+    WriteReg(FPGA_B2_REG, 600);
+    WriteReg(FPGA_IR1_REG, 800);
+    WriteReg(FPGA_IR2_REG, 800);
+    WriteReg(FPGA_COLOR_REG, FPGA_COLOR_C);
+    WriteReg(FPGA_DPI_REG, FPGA_DPI_200);
+    WriteReg(FPGA_HEIGHT_REG, 7200);
+    WriteReg(ADC_GAIN1_REG, 150);
+    WriteReg(ADC_GAIN2_REG, 150);
+    WriteReg(ADC_GAIN3_REG, 150);
+    WriteReg(ADC_OFFSET1_REG, 127);
+    WriteReg(ADC_OFFSET2_REG, 127);
+    WriteReg(ADC_OFFSET3_REG, 127);
+    WriteReg(ADC_GAIN4_REG, 150);
+    WriteReg(ADC_GAIN5_REG, 150);
+    WriteReg(ADC_GAIN6_REG, 150);
+    WriteReg(ADC_OFFSET4_REG, 127);
+    WriteReg(ADC_OFFSET5_REG, 127);
+    WriteReg(ADC_OFFSET6_REG, 127);
+    WriteReg(ADC_SYSTEM_REG, 15);
+    WriteReg(ADC_AFE_REG, 0);
+    WriteReg(ADC_START_REG, 1);
 }
 
 void VideoPort::WriteScanPara(int dpi, char color) {
@@ -123,57 +123,57 @@ void VideoPort::WriteScanPara(int dpi, char color) {
 
     switch (dpi) {
         case 200:
-            dpi = 1;
+            dpi = FPGA_DPI_200;
             switch (color) {
                 case 'C':
-                    color = 6;
-                    frequency = 1333;
+                    color = FPGA_COLOR_C;
+                    frequency = FPGA_FREQ_200D3;
                     break;
                 case 'G':
-                    color = 1;
-                    frequency = 1333;
+                    color = FPGA_COLOR_G;
+                    frequency = FPGA_FREQ_200D1;
                     break;
                 case 'I':
-                    color = 2;
-                    frequency = 1333;
+                    color = FPGA_COLOR_I;
+                    frequency = FPGA_FREQ_200D1;
                     break;
                 default:
                     break;
             }
             break;
         case 300:
-            dpi = 2;
+            dpi = FPGA_DPI_300;
             switch (color) {
                 case 'C':
-                    color = 6;
-                    frequency = 2000;
+                    color = FPGA_COLOR_C;
+                    frequency = FPGA_FREQ_300D3;
                     break;
                 case 'G':
-                    color = 1;
-                    frequency = 2000;
+                    color = FPGA_COLOR_G;
+                    frequency = FPGA_FREQ_300D1;
                     break;
                 case 'I':
-                    color = 2;
-                    frequency = 2000;
+                    color = FPGA_COLOR_I;
+                    frequency = FPGA_FREQ_300D1;
                     break;
                 default:
                     break;
             }
             break;
         case 600:
-            dpi = 3;
+            dpi = FPGA_DPI_600;
             switch (color) {
                 case 'C':
-                    color = 6;
-                    frequency = 4000;
+                    color = FPGA_COLOR_C;
+                    frequency = FPGA_FREQ_600D1;
                     break;
                 case 'G':
-                    color = 1;
-                    frequency = 4000;
+                    color = FPGA_COLOR_G;
+                    frequency = FPGA_FREQ_600D1;
                     break;
                 case 'I':
-                    color = 2;
-                    frequency = 4000;
+                    color = FPGA_COLOR_I;
+                    frequency = FPGA_FREQ_600D3;
                     break;
                 default:
                     break;
@@ -183,23 +183,23 @@ void VideoPort::WriteScanPara(int dpi, char color) {
             break;
     }
 
-    WriteReg(1024, frequency);
-    WriteReg(1034, (unsigned short) color);
-    WriteReg(1035, (unsigned short) dpi);
+    WriteReg(FPGA_FREQ_REG, frequency);
+    WriteReg(FPGA_COLOR_REG, (unsigned short) color);
+    WriteReg(FPGA_DPI_REG, (unsigned short) dpi);
 }
 
 void VideoPort::WriteLightPara(struct Light light) {
     if (!light.enable)
         return;
 
-    WriteReg(1026, light.r2);
-    WriteReg(1027, light.r1);
-    WriteReg(1028, light.g2);
-    WriteReg(1029, light.g1);
-    WriteReg(1030, light.b2);
-    WriteReg(1031, light.b1);
-    WriteReg(1032, light.ir2);
-    WriteReg(1033, light.ir1);
+    WriteReg(FPGA_R1_REG, light.r2);
+    WriteReg(FPGA_R2_REG, light.r1);
+    WriteReg(FPGA_G1_REG, light.g2);
+    WriteReg(FPGA_G2_REG, light.g1);
+    WriteReg(FPGA_B1_REG, light.b2);
+    WriteReg(FPGA_B2_REG, light.b1);
+    WriteReg(FPGA_IR1_REG, light.ir2);
+    WriteReg(FPGA_IR2_REG, light.ir1);
 }
 
 void VideoPort::WriteCorrectionPara(struct Correction correction) {
