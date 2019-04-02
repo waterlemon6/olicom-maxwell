@@ -37,6 +37,7 @@ public:
     void UpdateFrame();
 
     void ExtractImageSlice(unsigned char *dst, int offset, enum Page page);
+    void (*colorRemap)(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset) = nullptr;
 };
 
 void VideoCoreWait(int dpi, int depth, unsigned int lines);

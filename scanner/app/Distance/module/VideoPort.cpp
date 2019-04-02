@@ -141,6 +141,25 @@ void VideoPort::WriteScanPara(int dpi, char color) {
                     break;
             }
             break;
+        case 250:
+            dpi = FPGA_DPI_300;
+            switch (color) {
+                case 'C':
+                    color = FPGA_COLOR_C;
+                    frequency = FPGA_FREQ_250D3;
+                    break;
+                case 'G':
+                    color = FPGA_COLOR_G;
+                    frequency = FPGA_FREQ_250D1;
+                    break;
+                case 'I':
+                    color = FPGA_COLOR_I;
+                    frequency = FPGA_FREQ_250D1;
+                    break;
+                default:
+                    break;
+            }
+            break;
         case 300:
             dpi = FPGA_DPI_300;
             switch (color) {

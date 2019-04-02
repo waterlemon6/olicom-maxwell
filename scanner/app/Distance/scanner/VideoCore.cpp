@@ -7,6 +7,7 @@
 #include "main.h"
 #include "VideoCore.h"
 #include "VideoPort.h"
+#include "ColorRemap.h"
 
 void VideoCore::SetTime() {
     struct timeval tv {};
@@ -53,22 +54,16 @@ int VideoCore::CalculateScanLines() {
 
     switch (dpi_) {
         case 200:
-            if (depth_ == 3)
-                unit = SCAN_TIME_PER_LINE_200D3;
-            else
-                unit = SCAN_TIME_PER_LINE_200D1;
+            unit = (depth_ == 3) ? SCAN_TIME_PER_LINE_200D3 : SCAN_TIME_PER_LINE_200D1;
+            break;
+        case 250:
+            unit = (depth_ == 3) ? SCAN_TIME_PER_LINE_250D3 : SCAN_TIME_PER_LINE_250D1;
             break;
         case 300:
-            if (depth_ == 3)
-                unit = SCAN_TIME_PER_LINE_300D3;
-            else
-                unit = SCAN_TIME_PER_LINE_300D1;
+            unit = (depth_ == 3) ? SCAN_TIME_PER_LINE_300D3 : SCAN_TIME_PER_LINE_300D1;
             break;
         case 600:
-            if (depth_ == 3)
-                unit = SCAN_TIME_PER_LINE_600D3;
-            else
-                unit = SCAN_TIME_PER_LINE_600D1;
+            unit = (depth_ == 3) ? SCAN_TIME_PER_LINE_600D3 : SCAN_TIME_PER_LINE_600D1;
             break;
         default:
             return 0;
@@ -88,22 +83,25 @@ void VideoCore::SetAttr(int dpi, int depth) {
             attr_.cisWidth = CIS_WIDTH_200DPI;
             attr_.channelWidth = VIDEO_PORT_WIDTH;
             attr_.frame = 1;
+            colorRemap = ColorRemap1To1;
+            break;
+        case 250:
+            attr_.cisWidth = CIS_WIDTH_300DPI;
+            attr_.channelWidth = VIDEO_PORT_WIDTH;
+            attr_.frame = 1;
+            colorRemap = ColorRemap3To2;
             break;
         case 300:
             attr_.cisWidth = CIS_WIDTH_300DPI;
             attr_.channelWidth = VIDEO_PORT_WIDTH;
-            if (depth_ == 3)
-                attr_.frame = 2;
-            else if (depth_ == 1)
-                attr_.frame = 1;
+            attr_.frame = (depth_ == 3) ? 2 : 1;
+            colorRemap = ColorRemap1To1;
             break;
         case 600:
             attr_.cisWidth = CIS_WIDTH_600DPI;
             attr_.channelWidth = VIDEO_PORT_WIDTH * 2;
-            if (depth_ == 3)
-                attr_.frame = 6;
-            else if (depth_ == 1)
-                attr_.frame = 2;
+            attr_.frame = (depth_ == 3) ? 6 : 2;
+            colorRemap = ColorRemap1To1;
             break;
         default:
             return;

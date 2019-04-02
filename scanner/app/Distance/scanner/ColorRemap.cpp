@@ -138,7 +138,7 @@ enum ColorMap DeployColorMap(unsigned char data)
   *         offset: Offset of each channel in BRG model, only used in multiple channel.
   * @retval None.
   */
-void ColorRemap(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset) {
+void ColorRemap1To1(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset) {
     unsigned char R, G, B;
     int srcCount = 0, dstCount = 0;
     int doubleOffset = offset * 2;
@@ -157,6 +157,42 @@ void ColorRemap(const unsigned char *src, unsigned char *dst, int depth, int lef
     else if (depth == 1) {
         for (srcCount = leftEdge; srcCount < rightEdge; srcCount += 1, dstCount += 1) {
             dst[dstCount] = Y_YTable[src[srcCount]];
+        }
+    }
+}
+
+void ColorRemap3To2(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset)
+{
+    unsigned char R[3], G[3], B[3];
+    int srcCount = 0, dstCount = 0;
+    int doubleOffset = offset * 2;
+
+    leftEdge = leftEdge * 3 / 2;
+    rightEdge = rightEdge * 3 / 2;
+
+    if (depth == 3) {
+        for (srcCount = leftEdge; srcCount < rightEdge; srcCount += 3, dstCount += 6) {
+            for (int i = 0; i < 3; i++) {
+                B[i] = src[srcCount + i];
+                R[i] = src[srcCount + offset + i];
+                G[i] = src[srcCount + doubleOffset + i];
+            }
+
+            dst[dstCount] = (unsigned char)((Y_RTable[R[0]] + Y_GTable[G[0]] + Y_BTable[B[0]]) >> 16);
+            dst[dstCount + 1] = (unsigned char)((Cb_RTable[R[0]] + Cb_GTable[G[0]] + Cb_BTable[B[0]]) >> 16);
+            dst[dstCount + 2] = (unsigned char)((Cr_RTable[R[0]] + Cr_GTable[G[0]] + Cr_BTable[B[0]]) >> 16);
+            dst[dstCount + 3] = (unsigned char)((Y_RTable[R[1]] + Y_GTable[G[1]] + Y_BTable[B[1]]) >> 17) +
+                                (unsigned char)((Y_RTable[R[2]] + Y_GTable[G[2]] + Y_BTable[B[2]]) >> 17);
+            dst[dstCount + 4] = (unsigned char)((Cb_RTable[R[1]] + Cb_GTable[G[1]] + Cb_BTable[B[1]]) >> 17) +
+                                (unsigned char)((Cb_RTable[R[2]] + Cb_GTable[G[2]] + Cb_BTable[B[2]]) >> 17);
+            dst[dstCount + 5] = (unsigned char)((Cr_RTable[R[1]] + Cr_GTable[G[1]] + Cr_BTable[B[1]]) >> 17) +
+                                (unsigned char)((Cr_RTable[R[2]] + Cr_GTable[G[2]] + Cr_BTable[B[2]]) >> 17);
+        }
+    }
+    else if (depth == 1) {
+        for (srcCount = leftEdge; srcCount < rightEdge; srcCount += 3, dstCount += 2) {
+            dst[dstCount] = Y_YTable[src[srcCount]];
+            dst[dstCount + 1] = (Y_YTable[src[srcCount + 1]] >> 1) + (Y_YTable[src[srcCount + 2]] >> 1);
         }
     }
 }

@@ -174,8 +174,10 @@ struct Correction CorrectionAdjustLocal(int dpi, char color)
 
 struct Correction CorrectionAdjustLoad(int dpi, char color, unsigned short channel)
 {
-    struct Correction correction = CorrectionAdjustLocal(dpi, color);
+    if (dpi == 250)
+        dpi = 300;
 
+    struct Correction correction = CorrectionAdjustLocal(dpi, color);
     if (channel)
         correction.channel = channel;
     else {

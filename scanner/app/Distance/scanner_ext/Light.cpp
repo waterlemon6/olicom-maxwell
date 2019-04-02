@@ -398,6 +398,9 @@ struct Light LightAdjustmentDefault(int dpi, char color) {
 }
 
 struct Light LightAdjustmentLoad(int dpi, char color) {
+    if (dpi == 250)
+        dpi = 300;
+
     struct Light light = LightAdjustmentLocal(dpi, color);
     if (light.enable) {
         printf("Light adjustment is ready.\n");

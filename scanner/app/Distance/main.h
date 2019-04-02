@@ -50,5 +50,6 @@ enum ExitEvent {
 };
 
 enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdoor);
+enum ExitEvent BackDoor(char backdoor);
 
 #endif

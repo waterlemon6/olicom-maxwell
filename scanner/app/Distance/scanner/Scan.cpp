@@ -48,8 +48,9 @@ void Scan(int dpi, int depth, struct ImageSize *image)
     videoCore.UpdateFrame();
 
     Jpeg jpeg[IMAGE_MAX_NUM];
+    int dpi_jpeg = (dpi == 250) ? 200 : dpi;
     for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
-        jpeg[i].SetAttr(dpi, depth);
+        jpeg[i].SetAttr(dpi_jpeg, depth);
         jpeg[i].SetSize((JDIMENSION)image[i].width, (JDIMENSION)image[i].height);
         jpeg[i].StartCompress();
         pthread_mutex_init(&mutexSendPicture[i], nullptr);
@@ -95,7 +96,7 @@ void Scan(int dpi, int depth, struct ImageSize *image)
                 if (image[i].page) {
                     if (!imageSlice[i].empty()) {
                         line = imageSlice[i].front();
-                        ColorRemap(line, arrange, depth, image[i].leftEdge, image[i].rightEdge, VIDEO_PORT_WIDTH);
+                        videoCore.colorRemap(line, arrange, depth, image[i].leftEdge, image[i].rightEdge, VIDEO_PORT_WIDTH);
                         pthread_mutex_lock(&mutexSendPicture[i]);
                         jpeg[i].WriteScanLines(arrange);
                         pthread_mutex_unlock(&mutexSendPicture[i]);
@@ -115,7 +116,7 @@ void Scan(int dpi, int depth, struct ImageSize *image)
         if (image[i].page) {
             while (!imageSlice[i].empty()) {
                 line = imageSlice[i].front();
-                ColorRemap(line, arrange, depth, image[i].leftEdge, image[i].rightEdge, VIDEO_PORT_WIDTH);
+                videoCore.colorRemap(line, arrange, depth, image[i].leftEdge, image[i].rightEdge, VIDEO_PORT_WIDTH);
                 pthread_mutex_lock(&mutexSendPicture[i]);
                 jpeg[i].WriteScanLines(arrange);
                 pthread_mutex_unlock(&mutexSendPicture[i]);

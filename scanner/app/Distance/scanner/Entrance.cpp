@@ -75,6 +75,7 @@ void Scanner::SetCompressEdge(const unsigned char *data) {
 
     switch (dpi_) {
         case 200:
+        case 250:
             minUpEdge = 1;
             maxDownEdge = IMAGE_HEIGHT_200DPI;
             minLeftEdge = CIS_EDGE_200DPI;
@@ -142,12 +143,7 @@ void Scanner::ShowCompressMessage() {
 void Scanner::SetMode(int dpi, char color, int videoPortOffset) {
     dpi_ = dpi;
     color_ = color;
-
-    if (color_ == 'C')
-        depth_ = 3;
-    else
-        depth_ = 1;
-
+    depth_ = (color_ == 'C') ? 3 : 1;
     if (!videoPortOffset)
         videoPortOffset_ = videoPortOffset;
 }
@@ -166,6 +162,9 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
             break;
         case 2:
             dpi_temp = 200;
+            break;
+        case 3:
+            dpi_temp = 250;
             break;
         default:
             break;

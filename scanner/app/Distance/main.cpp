@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
 
     switch (dpi) {
         case 200:
+        case 250:
         case 300:
         case 600:
             break;
@@ -123,6 +124,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
     videoPort.WriteLightPara(light);
     struct Correction correction = CorrectionAdjustLoad(dpi, color);
     videoPort.WriteCorrectionPara(correction);
+    videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
     videoPort.Close();
 
     /**
@@ -230,7 +232,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
          * activate scanner
          */
         if (scanReq || backdoor) {
-            enum ExitEvent event = EXIT_EVENT_NOTHING;
+            enum ExitEvent event;
             printerDevice.Close();
             printerHost.Close();
 
@@ -238,48 +240,47 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
                 event = ActivateScanner(scanReq->position, (int)scanReq->length);
                 idle.push(scanReq);
             }
-            else {
-                switch (backdoor) {
-                    case 'S': {
-                        unsigned char buffer[22] = {
-                                0x01, 0x0B, 0x00, 0x00, 0x00,
-                                0x00, 0x00, 0x00, 0x00, 0x14, 0x40, 0x09, 0x60,
-                                0x00, 0x00, 0x00, 0x00, 0x14, 0x40, 0x09, 0x60,
-                                0x02
-                        };
-                        event = ActivateScanner(buffer, sizeof(buffer));
-                        break;
-                    }
-                    case 'D': {
-                        unsigned char buffer[5] = {
-                                0x01, 0x14, 0x00, 0x00, 0x00,
-                        };
-                        event = ActivateScanner(buffer, sizeof(buffer));
-                        break;
-                    }
-                    case 'U': {
-                        unsigned char buffer[5] = {
-                                0x01, 0x15, 0x00, 0x00, 0x00,
-                        };
-                        event = ActivateScanner(buffer, sizeof(buffer));
-                        break;
-                    }
-                    default:
-                        break;
-                }
-            }
+            else
+                event = BackDoor(backdoor);
 
             scanReq = nullptr;
             backdoor = 0;
+            if (event == EXIT_EVENT_COMMAND_ERROR)
+                cout << "Scanner command error.\n" << endl;
+            else if (event != EXIT_EVENT_NOTHING)
+                return event;
+
             printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
             printerHost.Open(PRINTER_HOST_PATH, O_RDWR);
-
-            if (event != EXIT_EVENT_NOTHING) {
-                if (event == EXIT_EVENT_COMMAND_ERROR)
-                    cout << "Scanner command error.\n" << endl;
-                else
-                    return event;
-            }
         }
     }
+}
+
+enum ExitEvent BackDoor(char backdoor) {
+    enum ExitEvent event;
+    if (backdoor == 'S') {
+        unsigned char buffer[22] = {
+                0x01, 0x0B, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x06, 0xC0, 0x09, 0x60,
+                0x00, 0x00, 0x00, 0x00, 0x06, 0xC0, 0x09, 0x60,
+                0x02
+        };
+        event =  ActivateScanner(buffer, sizeof(buffer));
+    }
+    else if (backdoor == 'D') {
+        unsigned char buffer[5] = {
+                0x01, 0x14, 0x00, 0x00, 0x00
+        };
+        event =  ActivateScanner(buffer, sizeof(buffer));
+    }
+    else if (backdoor == 'U') {
+        unsigned char buffer[5] = {
+                0x01, 0x15, 0x00, 0x00, 0x00
+        };
+        event =  ActivateScanner(buffer, sizeof(buffer));
+    }
+    else
+        event = EXIT_EVENT_COMMAND_ERROR;
+
+    return event;
 }
