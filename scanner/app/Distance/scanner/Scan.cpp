@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <fstream>
 #include <queue>
+#include <cstring>
 
 #include "main.h"
 #include "Scan.h"
@@ -52,6 +53,7 @@ void Scan(int dpi, int depth, struct ImageSize *image)
     for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
         jpeg[i].SetAttr(dpi_jpeg, depth);
         jpeg[i].SetSize((JDIMENSION)image[i].width, (JDIMENSION)image[i].height);
+        jpeg[i].SetHeader(Header(image[i].page));
         jpeg[i].StartCompress();
         pthread_mutex_init(&mutexSendPicture[i], nullptr);
     }
@@ -140,9 +142,12 @@ void Scan(int dpi, int depth, struct ImageSize *image)
 void *SendPicture(void* jpeg) {
     ssize_t retval;
     auto *pJpeg = (Jpeg *)jpeg;
-    unsigned long sendLength[IMAGE_MAX_NUM] = {};
-    const unsigned long packSize = 8000;
     const unsigned int delayTime = 1000; // us
+    unsigned long sendLength[IMAGE_MAX_NUM] = {};
+
+    const unsigned long headerSize = 1;
+    const unsigned long dataSize = 4000;
+    unsigned char pack[headerSize + dataSize];
 
     PrinterDevice printerDevice;
     printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
@@ -169,15 +174,15 @@ void *SendPicture(void* jpeg) {
             if (pJpeg[i].GetState() == JPEG_COMPRESS_STATE_SCANNING) {
                 pthread_mutex_lock(&mutexSendPicture[i]);
                 pJpeg[i].UpdateCompress();
-                if (pJpeg[i].GetLength() > sendLength[i] + packSize) {
-                    retval = printerDevice.Write(pJpeg[i].GetDst() + sendLength[i], packSize);
+                if (pJpeg[i].GetLength() > sendLength[i] + dataSize) {
+                    Pack(pJpeg[i].GetDst() + sendLength[i], pack, dataSize, pJpeg[i].GetHeader(), headerSize);
+                    retval = printerDevice.Write(pack, headerSize + dataSize);
                     if (retval > 0)
-                        sendLength[i] += retval;
+                        sendLength[i] += (retval - headerSize);
                 }
                 pthread_mutex_unlock(&mutexSendPicture[i]);
             }
         }
-
         usleep(delayTime);
     }
 
@@ -186,18 +191,20 @@ void *SendPicture(void* jpeg) {
       */
     for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
         if (pJpeg[i].GetState() == JPEG_COMPRESS_STATE_FINISHED) {
-            while (pJpeg[i].GetLength() > sendLength[i] + packSize) {
-                retval = printerDevice.Write(pJpeg[i].GetDst() + sendLength[i], packSize);
+            while (pJpeg[i].GetLength() > sendLength[i] + dataSize) {
+                Pack(pJpeg[i].GetDst() + sendLength[i], pack, dataSize, pJpeg[i].GetHeader(), headerSize);
+                retval = printerDevice.Write(pack, headerSize + dataSize);
                 if (retval > 0)
-                    sendLength[i] += retval;
+                    sendLength[i] += (retval - headerSize);
                 usleep(delayTime);
             }
 
             /* The last package. */
             while (pJpeg[i].GetLength() > sendLength[i]) {
-                retval = printerDevice.Write(pJpeg[i].GetDst() + sendLength[i], pJpeg[i].GetLength() - sendLength[i]);
+                Pack(pJpeg[i].GetDst() + sendLength[i], pack, pJpeg[i].GetLength() - sendLength[i], pJpeg[i].GetHeader(), headerSize);
+                retval = printerDevice.Write(pack, headerSize + pJpeg[i].GetLength() - sendLength[i]);
                 if (retval > 0)
-                    sendLength[i] += retval;
+                    sendLength[i] += (retval - headerSize);
                 usleep(delayTime);
             }
         }
@@ -217,4 +224,18 @@ void *SendPicture(void* jpeg) {
         stream.close();
     }
 #endif
+}
+
+unsigned char Header(enum Page page) {
+    if (page == PAGE_OBVERSE_SIDE)
+        return 0xFA;
+    else if (page == PAGE_OPPOSITE_SIDE)
+        return 0xFB;
+    else
+        return 0x00;
+}
+
+void Pack(unsigned char *src, unsigned char *dst, unsigned long dataSize, unsigned char header, unsigned long headerSize) {
+    dst[0] = header;
+    memcpy(dst + headerSize, src, dataSize);
 }

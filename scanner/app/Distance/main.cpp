@@ -124,7 +124,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
     videoPort.WriteLightPara(light);
     struct Correction correction = CorrectionAdjustLoad(dpi, color);
     videoPort.WriteCorrectionPara(correction);
-    videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
+    //videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
     videoPort.Close();
 
     /**
