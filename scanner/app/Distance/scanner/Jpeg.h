@@ -18,7 +18,7 @@ private:
     JDIMENSION height_;
     unsigned char *dst_;
     unsigned long length_;
-    unsigned char header_;
+    unsigned char headerTag_;
     enum JpegCompressState step_;
     struct jpeg_compress_struct comp_;
     struct jpeg_error_mgr err_;
@@ -28,8 +28,8 @@ public:
 
     void SetAttr(int dpi, int depth) { dpi_ = dpi; depth_ = depth; }
     void SetSize(JDIMENSION width, JDIMENSION height) { width_ = width; height_ = height; }
-    void SetHeader(unsigned char header) { header_ = header; }
-    unsigned char GetHeader() { return header_; }
+    void SetHeaderTag(unsigned char headerTag) { headerTag_ = headerTag; }
+    unsigned char GetHeaderTag() { return headerTag_; }
     unsigned long GetLength() { return length_; };
     unsigned char* GetDst() { return dst_; };
     enum JpegCompressState GetState() { return step_; }

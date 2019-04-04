@@ -158,6 +158,10 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
         idle.push(req);
     }
 
+    /* activate printer */
+    unsigned char calling[1] = {0};
+    printerHost.Write(calling, sizeof(calling));
+
     while (true) {
         /**
          * transform data from PC to printer

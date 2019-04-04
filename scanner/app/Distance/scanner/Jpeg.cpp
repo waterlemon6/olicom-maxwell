@@ -8,7 +8,7 @@ Jpeg::Jpeg(int dpi, int depth) {
     height_ = 0;
     dst_ = nullptr;
     length_ = 0;
-    header_ = 0;
+    headerTag_ = 0;
     step_ = JPEG_COMPRESS_STATE_IDLE;
     comp_.err = jpeg_std_error(&err_);
     jpeg_create_compress(&comp_);
