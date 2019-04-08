@@ -99,11 +99,14 @@ int main(int argc, char *argv[]) {
         case EXIT_EVENT_MODULES_NOT_INSTALLED:
             cout << "Modules not installed." << endl;
             break;
+        case EXIT_EVENT_PRINTER_NOT_CONNECTED:
+            cout << "Printer not connected." << endl;
+            break;
         default:
             cout << "Unknown exit event." << endl;
             break;
     }
-    return 0;
+    return ret;
 }
 
 enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdoor)
@@ -150,6 +153,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
         return EXIT_EVENT_MODULES_NOT_INSTALLED;
 
     ssize_t retval;
+    enum ExitEvent event;
     struct switchRequest *req, *scanReq = nullptr;
     queue<struct switchRequest *> tx, rx, idle;
     for (int i = 0; i < SWITCH_REQUEST_NUM; i++) {
@@ -197,7 +201,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
         }
 
         /**
-         * transform data from printer to PC, and check whether to activate scanner
+         * transform data from printer to PC, and check whether to exit or activate scanner.
          */
         if (!idle.empty()) {
             req = idle.front();
@@ -212,6 +216,10 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
                     scanReq = req;
                 else
                     rx.push(req);
+            }
+            else if (retval < 0) {
+                event = EXIT_EVENT_PRINTER_NOT_CONNECTED;
+                break;
             }
             else
                 idle.push(req);
@@ -236,7 +244,6 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
          * activate scanner
          */
         if (scanReq || backdoor) {
-            enum ExitEvent event;
             printerDevice.Close();
             printerHost.Close();
 
@@ -252,12 +259,39 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
             if (event == EXIT_EVENT_COMMAND_ERROR)
                 cout << "Scanner command error.\n" << endl;
             else if (event != EXIT_EVENT_NOTHING)
-                return event;
+                break;
 
             printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
             printerHost.Open(PRINTER_HOST_PATH, O_RDWR);
         }
     }
+
+    /**
+      * exit
+      */
+    if (printerDevice.IsOpen())
+        printerDevice.Close();
+    if (printerHost.IsOpen())
+        printerHost.Close();
+
+    delete scanReq;
+    while (!idle.empty()) {
+        req = idle.front();
+        idle.pop();
+        delete req;
+    }
+    while (!tx.empty()) {
+        req = tx.front();
+        tx.pop();
+        delete req;
+    }
+    while (!rx.empty()) {
+        req = rx.front();
+        rx.pop();
+        delete req;
+    }
+
+    return event;
 }
 
 enum ExitEvent BackDoor(char backdoor) {

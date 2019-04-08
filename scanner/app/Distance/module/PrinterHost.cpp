@@ -18,7 +18,7 @@ int PrinterHost::Poll(short int events, int time) {
 }
 
 ssize_t PrinterHost::Write(unsigned char *data, unsigned long size) {
-    ssize_t retval = -1;
+    ssize_t retval = 0;
     if (Poll(POLLOUT | POLLWRNORM, POLL_TIMEOUT)) { // ms
         retval = write(GetDescriptor(), data, size);
     }
@@ -26,7 +26,7 @@ ssize_t PrinterHost::Write(unsigned char *data, unsigned long size) {
 }
 
 ssize_t PrinterHost::Read(unsigned char *data, unsigned long size) {
-    ssize_t retval = -1;
+    ssize_t retval = 0;
     if (Poll(POLLIN | POLLRDNORM, POLL_TIMEOUT)) { // ms
         retval = read(GetDescriptor(), data, size);
     }

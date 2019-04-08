@@ -87,13 +87,13 @@ int UpdateWriteOneSection(unsigned char *buffer, unsigned int length, unsigned i
             sprintf(fileName, "setup_in_advance.sh");
             break;
         case UPDATE_MARK_JTAG_MODULE:
-            sprintf(fileName, "JTAG.ko");
+            sprintf(fileName, "jtag.ko");
             break;
         case UPDATE_MARK_JTAG_EXE:
-            sprintf(fileName, "start2_20180607");
+            sprintf(fileName, "Programmer");
             break;
         case UPDATE_MARK_RBF:
-            sprintf(fileName, "start_a64.rbf");
+            sprintf(fileName, "olicom_a64.rbf");
             break;
         case UPDATE_MARK_VIDEO_MODULE:
             sprintf(fileName, "video.ko");

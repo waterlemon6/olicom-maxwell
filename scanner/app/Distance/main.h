@@ -46,7 +46,8 @@ enum ExitEvent {
     EXIT_EVENT_UPDATE_OK,
     EXIT_EVENT_UPDATE_FAILED,
     EXIT_EVENT_MODULES_NOT_INSTALLED,
-    EXIT_EVENT_COMMAND_ERROR
+    EXIT_EVENT_COMMAND_ERROR,
+    EXIT_EVENT_PRINTER_NOT_CONNECTED
 };
 
 enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdoor);

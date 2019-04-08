@@ -907,8 +907,7 @@ static void printer_cfg_unbind(struct usb_configuration *c)
 	WARN_ON(!list_empty(&dev->rx_reqs_active));
 
 	while (!list_empty(&dev->tx_reqs)) {
-		req = container_of(dev->tx_reqs.next, struct usb_request,
-				list);
+		req = container_of(dev->tx_reqs.next, struct usb_request, list);
 		list_del(&req->list);
 		printer_req_free(dev->in_ep, req);
 	}
@@ -931,8 +930,8 @@ static void printer_cfg_unbind(struct usb_configuration *c)
 
 static int __init printer_bind_config(struct usb_configuration *c)
 {
-	struct usb_gadget	*gadget = c->cdev->gadget;
-	struct printer_dev	*dev = &usb_printer_dev;
+	struct usb_gadget *gadget = c->cdev->gadget;
+	struct printer_dev *dev = &usb_printer_dev;
 	int status = -ENOMEM;
 	size_t len;
 	u32 i;
@@ -1034,6 +1033,8 @@ fail:
 
 static int printer_unbind(struct usb_composite_dev *cdev)
 {
+	// try to add list_del(&c->list) in __composite_unbind in composite.c
+	printk(KERN_ALERT "[printer device]""printer unbind.\n");
 	return 0;
 }
 
