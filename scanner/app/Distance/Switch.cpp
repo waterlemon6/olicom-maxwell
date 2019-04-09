@@ -35,10 +35,22 @@ bool SwitchRequestScanner(struct switchRequest *req) {
 
     unsigned char *head = &req->buffer[0];
     unsigned char *tail = &req->buffer[req->length - 5];
-    if((head[0] == 0x01) && (head[1] == 0x0A) && (head[2] == 0x00) && (head[3] == 0x00) && (head[4] == 0x00))
+    if((head[0] == 0x01) && (head[1] == 0x0A) && (head[2] == 0x00) && (head[3] == 0x00) && (head[4] == 0x00)) {
         if((tail[0] == 0x01) && (tail[1] == 0x0B) && (tail[2] == 0x00) && (tail[3] == 0x00) && (tail[4] == 0x00)) {
             req->position = &req->buffer[5];
             req->length -= 10;
             return true;
         }
+    }
+
+    return false;
+}
+
+void SwitchRequestClearQueue(std::queue<struct switchRequest *> &q) {
+    struct switchRequest *req;
+    while (!q.empty()) {
+        req = q.front();
+        q.pop();
+        delete req;
+    }
 }

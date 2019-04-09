@@ -1,7 +1,6 @@
 #include <iostream>
 #include <fcntl.h>
 #include <queue>
-#include <unistd.h>
 
 #include "main.h"
 #include "VideoPort.h"
@@ -154,7 +153,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
 
     ssize_t retval;
     enum ExitEvent event;
-    struct switchRequest *req, *scanReq = nullptr;
+    struct switchRequest *req = nullptr, *scanReq = nullptr;
     queue<struct switchRequest *> tx, rx, idle;
     for (int i = 0; i < SWITCH_REQUEST_NUM; i++) {
         req = new struct switchRequest;
@@ -274,22 +273,11 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
     if (printerHost.IsOpen())
         printerHost.Close();
 
+    delete req;
     delete scanReq;
-    while (!idle.empty()) {
-        req = idle.front();
-        idle.pop();
-        delete req;
-    }
-    while (!tx.empty()) {
-        req = tx.front();
-        tx.pop();
-        delete req;
-    }
-    while (!rx.empty()) {
-        req = rx.front();
-        rx.pop();
-        delete req;
-    }
+    SwitchRequestClearQueue(idle);
+    SwitchRequestClearQueue(tx);
+    SwitchRequestClearQueue(rx);
 
     return event;
 }
