@@ -3,6 +3,8 @@
 #include <linux/poll.h>
 #include <linux/cdev.h>
 #include <linux/usb/composite.h>
+#include <linux/workqueue.h>
+#include <linux/delay.h>
 
 #define PRINTER_NOT_ERROR 0x08
 #define PRINTER_SELECTED 0x10
@@ -1057,6 +1059,47 @@ static int __init printer_bind(struct usb_composite_dev *cdev)
 	return ret;
 }
 
+static struct work_struct printer_resume_work;
+
+static void printer_resume_late(struct work_struct *data)
+{
+	struct file *fp = filp_open("/sys/devices/soc.0/usbc0.5/otg_role", O_RDWR, 0644);
+	char null_command[] = "null";
+	char device_command[] = "usb_device";
+	mm_segment_t fs;
+	loff_t pos = 0;
+
+	printk(KERN_ALERT "[printer device]""resume late.\n");
+	if (IS_ERR(fp)){
+		printk(KERN_ALERT "[printer device]""open file error\n");
+		return;
+	}
+	mdelay(1000);
+	fs = get_fs();
+	set_fs(KERNEL_DS);
+	vfs_write(fp, null_command, sizeof(null_command), &pos);
+	mdelay(500);
+	vfs_write(fp, device_command, sizeof(device_command), &pos);
+	filp_close(fp, NULL);
+	set_fs(fs);
+}
+
+void printer_disconnect(struct usb_composite_dev *cdev)
+{
+	printk(KERN_ALERT "[printer device]""disconnect.\n");
+}
+
+void printer_suspend(struct usb_composite_dev *cdev)
+{
+	printk(KERN_ALERT "[printer device]""suspend.\n");
+}
+
+void printer_resume(struct usb_composite_dev *cdev)
+{
+	printk(KERN_ALERT "[printer device]""resume.\n");
+	schedule_work(&printer_resume_work);
+}
+
 static __refdata struct usb_composite_driver printer_driver = {
 	.name  = "printer",
 	.dev = &device_desc,
@@ -1064,6 +1107,9 @@ static __refdata struct usb_composite_driver printer_driver = {
 	.max_speed = USB_SPEED_HIGH,
 	.bind = printer_bind,
 	.unbind = printer_unbind,
+	.disconnect = printer_disconnect,
+	.suspend = printer_suspend,
+	.resume = printer_resume,
 };
 
 static int __init printer_init(void)
@@ -1092,6 +1138,7 @@ static int __init printer_init(void)
 		printk(KERN_ALERT "[printer device]""usb_gadget_probe_driver %x\n", status);
 	}
 
+	INIT_WORK(&printer_resume_work, printer_resume_late);
 	return status;
 }
 

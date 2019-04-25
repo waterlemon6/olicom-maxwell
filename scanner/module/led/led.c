@@ -108,7 +108,7 @@ static int led_init(void)
 
 	led_device = device_create(led_class, NULL, led_devno, NULL, "led");
 	if (IS_ERR(led_device)) {
-		status = PTR_ERR(led_class);
+		status = PTR_ERR(led_device);
 		printk(KERN_ALERT "[led]""Creat device error.\n");
 		unregister_chrdev_region(led_devno, 1);
 		class_destroy(led_class);
