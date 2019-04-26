@@ -7,10 +7,20 @@
 #include <linux/sys_config.h>
 
 #define LED1 GPIOH(6)
-#define LED2 GPIOH(7)
+#define LED2 GPIOH(8) // GPIO(7)
+#define EXTI GPIOH(7)
 
-static struct class *led_class;
-static dev_t led_devno;
+/**
+ * 0 - led
+ * 1 - exti
+ */
+#define TRINKETS_NUM 2
+static struct class *wl_trinkets;
+static dev_t devno;
+
+/**
+ * led
+ */
 struct device *led_device;
 static int led_status;
 
@@ -87,59 +97,94 @@ static ssize_t set_led_state(struct device *pdev, struct device_attribute *attr,
 
 static DEVICE_ATTR(state, S_IRUGO | S_IWUSR, show_led_state, set_led_state);
 
-static int led_init(void)
+/**
+ * exti
+ */
+struct device *exti_device;
+static int exti_count;
+
+static void exti_config(void)
+{
+	exti_count = 0;
+}
+
+static void exti_deconfig(void)
+{
+	exti_count = 0;
+}
+
+/**
+ * trinkets
+ */
+static int trinkets_creat(struct device *dev, dev_t devno, char *name, struct device_attribute *attr)
 {
 	int status = 0;
-	printk(KERN_ALERT "-------led configuration.-------\n");
-
-	led_class = class_create(THIS_MODULE, "wl_led");
-	if (IS_ERR(led_class)) {
-		status = PTR_ERR(led_class);
-		printk(KERN_ALERT "[led]""Create class error.\n");
+	dev = device_create(wl_trinkets, NULL, devno, NULL, name);
+	if (IS_ERR(dev)) {
+		status = PTR_ERR(dev);
+		printk(KERN_ALERT "[trinkets]""Creat device error.\n");
 		return status;
 	}
 
-	status = alloc_chrdev_region(&led_devno, 0, 1, "Waterlemon LED");
+	if (attr)
+		status = device_create_file(dev, attr);
+	if (status)
+		printk(KERN_ALERT "[trinkets]""Creat device file error.\n");
+	return status;
+}
+
+static void trinkets_destroy(struct device *dev, dev_t devno, struct device_attribute *attr)
+{
+	if (attr)
+		device_remove_file(dev, attr);
+
+	device_destroy(wl_trinkets, devno);
+}
+
+static int trinkets_init(void)
+{
+	int status = 0;
+	printk(KERN_ALERT "-------trinkets configuration.-------\n");
+
+	wl_trinkets = class_create(THIS_MODULE, "wl_trinkets");
+	if (IS_ERR(wl_trinkets)) {
+		status = PTR_ERR(wl_trinkets);
+		printk(KERN_ALERT "[trinkets]""Create class error.\n");
+		return status;
+	}
+
+	status = alloc_chrdev_region(&devno, 0, TRINKETS_NUM, "Waterlemon Trinkets");
 	if (status) {
-		printk(KERN_ALERT "[led]""Allocate chrdev region error.\n");
-		class_destroy(led_class);
+		printk(KERN_ALERT "[trinkets]""Allocate chrdev region error.\n");
+		class_destroy(wl_trinkets);
 		return status;
 	}
 
-	led_device = device_create(led_class, NULL, led_devno, NULL, "led");
-	if (IS_ERR(led_device)) {
-		status = PTR_ERR(led_device);
-		printk(KERN_ALERT "[led]""Creat device error.\n");
-		unregister_chrdev_region(led_devno, 1);
-		class_destroy(led_class);
-		return status;
-	}
+	status = trinkets_creat(led_device, devno, "led", &dev_attr_state);
+	if (!status)
+		led_config();
 
-	status = device_create_file(led_device, &dev_attr_state);
-	if (status) {
-		printk(KERN_ALERT "[led]""Creat device file error.\n");
-		device_destroy(led_class, led_devno);
-		unregister_chrdev_region(led_devno, 1);
-		class_destroy(led_class);
-		return status;
-	}
+	status = trinkets_creat(exti_device, devno + 1, "exti", NULL);
+	if (!status)
+		exti_config();
 
-	led_config();
 	return 0;
 }
 
-static void led_exit(void)
+static void trinkets_exit(void)
 {
-	printk(KERN_ALERT "-------led deconfiguration.-------\n");
+	printk(KERN_ALERT "-------trinkets deconfiguration.-------\n");
 
 	led_deconfig();
-	device_remove_file(led_device, &dev_attr_state);
-	device_destroy(led_class, led_devno);
-	unregister_chrdev_region(led_devno, 1);
-	class_destroy(led_class);
+	trinkets_destroy(led_device, devno, &dev_attr_state);
+	exti_deconfig();
+	trinkets_destroy(exti_device, devno + 1, NULL);
+
+	unregister_chrdev_region(devno, 2);
+	class_destroy(wl_trinkets);
 }
 
-module_init(led_init);
-module_exit(led_exit);
+module_init(trinkets_init);
+module_exit(trinkets_exit);
 
 MODULE_LICENSE("GPL");

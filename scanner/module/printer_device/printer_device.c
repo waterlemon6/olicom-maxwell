@@ -1074,11 +1074,11 @@ static void printer_resume_late(struct work_struct *data)
 		printk(KERN_ALERT "[printer device]""open file error\n");
 		return;
 	}
-	mdelay(1000);
+	mdelay(400);
 	fs = get_fs();
 	set_fs(KERNEL_DS);
 	vfs_write(fp, null_command, sizeof(null_command), &pos);
-	mdelay(500);
+	mdelay(400);
 	vfs_write(fp, device_command, sizeof(device_command), &pos);
 	filp_close(fp, NULL);
 	set_fs(fs);

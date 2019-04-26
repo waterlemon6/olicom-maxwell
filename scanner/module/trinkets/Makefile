@@ -1,4 +1,4 @@
-obj-m := led.o
+obj-m := trinkets.o
 
 KERNEL_DIR := /home/waterlemon/arm-linux/a64/lichee/linux-3.10
 
