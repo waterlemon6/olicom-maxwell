@@ -31,6 +31,11 @@ int main()
         return -2;
     printf("Read Section 2\n");
 
+    input[3] = ReadOneSection(&ImageHeader, "printer_device.ko", UPDATE_MARK_PR_DEVICE_MODULE);
+    if(input[3] == NULL)
+        return -2;
+    printf("Read Section 2\n");
+
     fwrite(&ImageHeader, sizeof(struct imageHeader), 1, output);
     for (int i = 0; i < ImageHeader.sectionCount; i++) {
         Section = (struct sectionHeader *)input[i];

@@ -164,6 +164,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
             break;
         case 2:
             dpi_temp = 200;
+            //dpi_temp = 250;
             break;
         case 3:
             dpi_temp = 250;
