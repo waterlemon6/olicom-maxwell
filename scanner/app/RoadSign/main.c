@@ -21,20 +21,15 @@ int main()
         return -2;
     printf("Read Section 0\n");
 
-    /*input[1] = ReadOneSection(&ImageHeader, "setup_in_advance.sh", UPDATE_MARK_SHELL);
+    input[1] = ReadOneSection(&ImageHeader, "setup_in_advance.sh", UPDATE_MARK_SHELL);
     if(input[1] == NULL)
         return -2;
     printf("Read Section 1\n");
 
-    input[2] = ReadOneSection(&ImageHeader, "printer_device.ko", UPDATE_MARK_PR_DEVICE_MODULE);
+    input[2] = ReadOneSection(&ImageHeader, "led.ko", UPDATE_MARK_LED_MODULE);
     if(input[2] == NULL)
         return -2;
     printf("Read Section 2\n");
-
-    input[3] = ReadOneSection(&ImageHeader, "led.ko", UPDATE_MARK_LED_MODULE);
-    if(input[3] == NULL)
-        return -2;
-    printf("Read Section 3\n");*/
 
     fwrite(&ImageHeader, sizeof(struct imageHeader), 1, output);
     for (int i = 0; i < ImageHeader.sectionCount; i++) {

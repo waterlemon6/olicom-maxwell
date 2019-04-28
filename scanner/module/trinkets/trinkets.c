@@ -1,8 +1,8 @@
 #include <linux/init.h>
 #include <linux/module.h>
 #include <linux/gpio.h>
+#include <linux/interrupt.h>
 #include <linux/device.h>
-#include <linux/cdev.h>
 #include <linux/fs.h>
 #include <linux/sys_config.h>
 
@@ -23,6 +23,8 @@ static dev_t devno;
  */
 struct device *led_device;
 static int led_status;
+static int led_enable = 1;
+module_param(led_enable, int, S_IRUGO|S_IWUSR);
 
 static void led_config(void)
 {
@@ -102,17 +104,47 @@ static DEVICE_ATTR(state, S_IRUGO | S_IWUSR, show_led_state, set_led_state);
  */
 struct device *exti_device;
 static int exti_count;
+static int exti_enable = 1;
+module_param(exti_enable, int, S_IRUGO|S_IWUSR);
+
+static irqreturn_t exti_callback(int irq, void *data)
+{
+	disable_irq(EXTI);
+	exti_count++;
+	printk(KERN_ALERT "[exti]""add.\n");
+	return IRQ_HANDLED;
+}
 
 static void exti_config(void)
 {
+	gpio_request(EXTI, NULL);
+	gpio_direction_input(EXTI);
+	request_irq(gpio_to_irq(EXTI), exti_callback, IRQF_TRIGGER_RISING, NULL, NULL);
 	exti_count = 0;
 }
 
 static void exti_deconfig(void)
 {
 	exti_count = 0;
+	free_irq(gpio_to_irq(EXTI), NULL);
+	gpio_free(EXTI);
 }
 
+static ssize_t show_exti_count(struct device *pdev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d", exti_count);
+}
+
+static ssize_t set_exti_count(struct device *pdev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	int input;
+	sscanf(buf, "%d", &input);
+	exti_count = input;
+	enable_irq(EXTI);
+	return size;
+}
+
+static DEVICE_ATTR(count, S_IRUGO | S_IWUSR, show_exti_count, set_exti_count);
 /**
  * trinkets
  */
@@ -160,13 +192,17 @@ static int trinkets_init(void)
 		return status;
 	}
 
-	status = trinkets_creat(led_device, devno, "led", &dev_attr_state);
-	if (!status)
-		led_config();
+	if (led_enable) {
+		status = trinkets_creat(led_device, devno, "led", &dev_attr_state);
+		if (!status)
+			led_config();
+	}
 
-	status = trinkets_creat(exti_device, devno + 1, "exti", NULL);
-	if (!status)
-		exti_config();
+	if (exti_enable) {
+		status = trinkets_creat(exti_device, devno + 1, "exti", &dev_attr_count);
+		if (!status)
+			exti_config();
+	}
 
 	return 0;
 }
@@ -175,10 +211,15 @@ static void trinkets_exit(void)
 {
 	printk(KERN_ALERT "-------trinkets deconfiguration.-------\n");
 
-	led_deconfig();
-	trinkets_destroy(led_device, devno, &dev_attr_state);
-	exti_deconfig();
-	trinkets_destroy(exti_device, devno + 1, NULL);
+	if (led_enable) {
+		led_deconfig();
+		trinkets_destroy(led_device, devno, &dev_attr_state);
+	}
+
+	if (exti_enable) {
+		exti_deconfig();
+		trinkets_destroy(exti_device, devno + 1, &dev_attr_count);
+	}
 
 	unregister_chrdev_region(devno, 2);
 	class_destroy(wl_trinkets);

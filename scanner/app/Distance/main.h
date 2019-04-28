@@ -7,6 +7,8 @@
 #define VIDEO_PORT_PATH "/dev/wl_video"
 #define PRINTER_DEVICE_PATH "/dev/wl_printer"
 #define PRINTER_HOST_PATH "/dev/usb/lp0"
+#define LED_PATH "/sys/class/wl_trinkets/led/state"
+#define EXTI_PATH "/sys/class/wl_trinkets/exti/count"
 
 #define SWITCH_REQUEST_NUM 20
 #define SWITCH_REQUEST_LEN 4000

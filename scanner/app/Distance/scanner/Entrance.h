@@ -59,4 +59,7 @@ public:
 void SetScannerMode(int dpi, char color, int maxScanLines);
 enum ExitEvent ActivateScanner(unsigned char* data, int size);
 
+void SetExtiCount(int count);
+int GetExtiCount();
+
 #endif

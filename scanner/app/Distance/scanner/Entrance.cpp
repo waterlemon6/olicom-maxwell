@@ -1,5 +1,7 @@
 #include <iostream>
 #include <unistd.h>
+#include <fcntl.h>
+#include <cstring>
 
 #include "Light.h"
 #include "Correction.h"
@@ -198,7 +200,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x00, 0x04, 0x00};
+    unsigned char version[4] = {0x01, 0x00, 0x05, 0x00};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -217,15 +219,12 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     switch (cmd_) {
         case SCANNER_COMMAND_SCAN:
             printf("Go to scan.\n");
+            SetExtiCount(0);
             SetCompressPage(data[21]);
             SetCompressEdge(&data[5]);
             ShowCompressMessage();
-            if ((dpi_ == 300) && (depth_ == 1))
-                usleep(60*1000);
-            else if ((dpi_ == 200) && (depth_ == 3))
-                usleep(70*1000);
-            else if ((dpi_ == 200) && (depth_ == 1))
-                usleep(80*1000);
+            while (!GetExtiCount())
+                usleep(2000);
             Scan(dpi_, depth_, image_);
             break;
 
@@ -299,4 +298,30 @@ void SetScannerMode(int dpi, char color, int videoPortOffset) {
 enum ExitEvent ActivateScanner(unsigned char* data, int size) {
     Scanner scanner;
     return scanner.Activate(data, size);
+}
+
+void SetExtiCount(int count) {
+    int desc = open(EXTI_PATH, O_RDWR);
+    if (desc < 0)
+        return;
+
+    char buffer[64];
+    sprintf(buffer, "%d", count);
+    write(desc, buffer, strlen(buffer));
+    close(desc);
+}
+
+int GetExtiCount() {
+    int count = 0;
+    int desc = open(EXTI_PATH, O_RDWR);
+    if (desc < 0)
+        return 1;
+
+    char buffer[64];
+    read(desc, buffer, sizeof(buffer));
+    close(desc);
+    count = (int) strtol(buffer, nullptr, 10);
+    if (count)
+        printf("Get valid exti count: %d.\n", count);
+    return count;
 }

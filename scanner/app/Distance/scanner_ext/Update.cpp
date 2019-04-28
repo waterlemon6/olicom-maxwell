@@ -111,7 +111,7 @@ int UpdateWriteOneSection(unsigned char *buffer, unsigned int length, unsigned i
             sprintf(fileName, "Map");
             break;
         case UPDATE_MARK_LED_MODULE:
-            sprintf(fileName, "led.ko");
+            sprintf(fileName, "trinkets.ko");
             break;
         default:
             printf("Error in Write One Section, Mark Error.\n");
