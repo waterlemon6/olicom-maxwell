@@ -17,27 +17,36 @@ int main() {
         usblp = open(USBLP_PATH, O_RDWR);
     }
 
+    /* activate printer */
+    unsigned char calling[1] = {0};
+    write(usblp, calling, sizeof(calling));
+
+    /* VID PID */
     int twoints[2] = {};
     ioctl(usblp, LPIOC_GET_VID_PID(sizeof(twoints)), twoints);
     int VID = twoints[0];
     int PID = twoints[1];
 
+    /* device ID */
     struct deviceIDDesc deviceID;
     memset(deviceID.data, 0, USBLP_DEVICE_ID_SIZE);
     ioctl(usblp, LPIOC_GET_DEVICE_ID(USBLP_DEVICE_ID_SIZE), deviceID.data);
     deviceID.bytes = (deviceID.data[0] << 8) | deviceID.data[1];
     deviceID.str = &deviceID.data[2];
 
+    /* manufacture string */
     struct stringDesc manufacturerString;
     memset(manufacturerString.data, 0, USBLP_STRING_SIZE);
     manufacturerString.size = ioctl(usblp, LPIOC_GET_MANUFACTURER_STRING(USBLP_STRING_SIZE), manufacturerString.data);
     manufacturerString.str = &manufacturerString.data[0];
 
+    /* product string */
     struct stringDesc productString;
     memset(productString.data, 0, USBLP_STRING_SIZE);
     productString.size = ioctl(usblp, LPIOC_GET_PRODUCT_STRING(USBLP_STRING_SIZE), productString.data);
     productString.str = &productString.data[0];
 
+    /* serial string */
     struct stringDesc serialString;
     memset(serialString.data, 0, USBLP_STRING_SIZE);
     serialString.size = ioctl(usblp, LPIOC_GET_SERIAL_STRING(USBLP_STRING_SIZE), serialString.data);
