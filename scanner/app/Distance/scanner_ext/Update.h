@@ -1,38 +1,27 @@
 #ifndef __UPDATE_H__
 #define __UPDATE_H__
 
-#define MAGIC_NUMBER 20190319
+#define MAGIC_NUMBER 20190428
+#define UPDATE_IMG "update.img"
 
-#define UPDATE_MARK_SHELL               1
-#define UPDATE_MARK_JTAG_MODULE         2
-#define UPDATE_MARK_JTAG_EXE            3
-#define UPDATE_MARK_RBF                 4
-#define UPDATE_MARK_VIDEO_MODULE        5
-#define UPDATE_MARK_PR_HOST_MODULE      6
-#define UPDATE_MARK_PR_DEVICE_MODULE    7
-#define UPDATE_MARK_DISTANCE_EXE        8
-#define UPDATE_MARK_MAP_EXE             9
-#define UPDATE_MARK_LED_MODULE          10
-
-struct imageHeader {
-    unsigned int magic;
-    unsigned int length; // Including header
-    unsigned int check;
-    unsigned int sectionCount;
-    unsigned int sectionOffset[10];
+struct ImageHeader {
+    unsigned int magic;     // Magic number.
+    unsigned int length;    // The whole image file.
+    unsigned int check;     // CRC32 check, SectionHeader + data.
+    unsigned int section;   // The number of section.
 };
 
-struct sectionHeader {
-    unsigned int length; // Including header
-    unsigned int mark;
+struct SectionHeader {
+    unsigned int length;    // The length of the valid file.
+    unsigned int permission;// File permission
+    char name[64];
 };
 
 unsigned int GetCRC32CheckSum(unsigned char *pchMessage, unsigned int dwLength);
-
-unsigned int UpdateCheckImageHeader(unsigned char *buffer, unsigned int length);
-unsigned char *UpdateGetOneSection(unsigned char *buffer, unsigned int count);
-int UpdateWriteOneSection(unsigned char *buffer, unsigned int length, unsigned int mark);
 void UpdateDecompress(unsigned char *buffer, unsigned int length);
+unsigned int UpdateCheckImageHeader(unsigned char *buffer, unsigned int length);
+void UpdateWriteSection(struct SectionHeader *sectionHeader, unsigned char *data);
+
 bool Update();
 
 #endif

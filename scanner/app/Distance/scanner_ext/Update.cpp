@@ -53,115 +53,49 @@ unsigned int GetCRC32CheckSum(unsigned char *pchMessage, unsigned int dwLength) 
 }
 
 unsigned int UpdateCheckImageHeader(unsigned char *buffer, unsigned int length) {
-    auto *Image = (struct imageHeader *)buffer;
-    if (Image->magic != MAGIC_NUMBER) {
+    auto *imageHeader = (struct ImageHeader *)buffer;
+    if (imageHeader->magic != MAGIC_NUMBER) {
         printf("Error In Load Image Header, Magic Number Is Wrong.\n");
         return 0;
     }
-    if (length - Image->length > 62) {
+    if ((imageHeader->length < sizeof(struct ImageHeader)) || (imageHeader->length != length)) {
         printf("Error In Load Image Header, Length Is Wrong.\n");
         return 0;
     }
-    if (Image->check != GetCRC32CheckSum(buffer + sizeof(struct imageHeader), Image->length - sizeof(struct imageHeader))) {
+    if (imageHeader->check != GetCRC32CheckSum(buffer + sizeof(struct ImageHeader), imageHeader->length - sizeof(struct ImageHeader))) {
         printf("Error In Load Image Header, Check Is Wrong.\n");
         return 0;
     }
-
-    return Image->sectionCount;
+    return imageHeader->section;
 }
 
-unsigned char *UpdateGetOneSection(unsigned char *buffer, unsigned int count) {
-    auto *Image = (struct imageHeader *)buffer;
-    unsigned char *aim = buffer + Image->sectionOffset[count];
+void UpdateWriteSection(struct SectionHeader *sectionHeader, unsigned char *data) {
+    FILE *stream = fopen(sectionHeader->name, "wb");
+    if (stream == nullptr)
+        return;
 
-    return aim;
-}
-
-int UpdateWriteOneSection(unsigned char *buffer, unsigned int length, unsigned int mark) {
-    size_t ret;
-    char fileName[128];
-    char cmd[128];
-    FILE *stream;
-    switch (mark) {
-        case UPDATE_MARK_SHELL:
-            sprintf(fileName, "setup_in_advance.sh");
-            break;
-        case UPDATE_MARK_JTAG_MODULE:
-            sprintf(fileName, "jtag.ko");
-            break;
-        case UPDATE_MARK_JTAG_EXE:
-            sprintf(fileName, "Programmer");
-            break;
-        case UPDATE_MARK_RBF:
-            sprintf(fileName, "olicom_a64.rbf");
-            break;
-        case UPDATE_MARK_VIDEO_MODULE:
-            sprintf(fileName, "video.ko");
-            break;
-        case UPDATE_MARK_PR_HOST_MODULE:
-            sprintf(fileName, "printer_host.ko");
-            break;
-        case UPDATE_MARK_PR_DEVICE_MODULE:
-            sprintf(fileName, "printer_device.ko");
-            break;
-        case UPDATE_MARK_DISTANCE_EXE:
-            sprintf(fileName, "Distance");
-            break;
-        case UPDATE_MARK_MAP_EXE:
-            sprintf(fileName, "Map");
-            break;
-        case UPDATE_MARK_LED_MODULE:
-            sprintf(fileName, "trinkets.ko");
-            break;
-        default:
-            printf("Error in Write One Section, Mark Error.\n");
-            return -1;
-    }
-
-    sprintf(cmd, "rm %s", fileName);
-    system(cmd);
-
-    stream = fopen(fileName, "wb");
-    ret = fwrite(buffer, length, 1, stream);
+    fwrite(data, sectionHeader->length, 1, stream);
     fflush(stream);
     fclose(stream);
 
-    switch (mark) {
-        case UPDATE_MARK_SHELL:
-        case UPDATE_MARK_JTAG_EXE:
-        case UPDATE_MARK_DISTANCE_EXE:
-        case UPDATE_MARK_MAP_EXE:
-            sprintf(cmd, "chmod 777 %s", fileName);
-            system(cmd);
-            break;
-        default:
-            break;
-    }
-
-    if (ret == 1)
-        return 0;
-    else {
-        printf("Error in Write One Section, Write Error.\n");
-        return -2;
-    }
+    char cmd[128];
+    sprintf(cmd, "chmod %o %s", sectionHeader->permission, sectionHeader->name);
+    system(cmd);
 }
 
 void UpdateDecompress(unsigned char *buffer, unsigned int length) {
-    unsigned int sectionCount = 0;
-    unsigned char *aim = nullptr;
-    struct sectionHeader *Section = nullptr;
-    sectionCount = UpdateCheckImageHeader(buffer, length);
+    unsigned int sectionCount = UpdateCheckImageHeader(buffer, length);
     if (sectionCount == 0) {
         printf("Error In Update Process, Check Failed!\n");
         return;
     }
 
     printf("Hello, World!\n");
-    for (unsigned int i = 0; i < sectionCount; i++) {
-        aim = UpdateGetOneSection(buffer, i);
-        Section = (struct sectionHeader *)aim;
-        printf("%d, %d\n", Section->mark, Section->length);
-        UpdateWriteOneSection(aim + sizeof(struct sectionHeader), Section->length - sizeof(struct sectionHeader), Section->mark);
+    auto *sectionHeader = (struct SectionHeader *) (buffer + sizeof(struct ImageHeader));
+    unsigned char *data = buffer + sizeof(struct ImageHeader) + sectionCount * sizeof(struct SectionHeader);
+    for (unsigned int i = 0; i < sectionCount; i++, data += sectionHeader->length, sectionHeader++) {
+        printf("Output: %s %d %o.\n", sectionHeader->name, sectionHeader->length, sectionHeader->permission);
+        UpdateWriteSection(sectionHeader, data);
     }
     sync();
     printf("Goodbye, Cruel World.\n");
@@ -171,7 +105,7 @@ bool Update() {
     PrinterDevice printerDevice;
     printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
 
-    FILE *stream = fopen("update.img", "wb");
+    FILE *stream = fopen(UPDATE_IMG, "wb");
     if(stream == nullptr)
         return false;
 
@@ -180,10 +114,10 @@ bool Update() {
 
     while (!printerDevice.Poll(POLLIN | POLLRDNORM, 1000));
     ssize_t bytes = printerDevice.Read(buffer, cut);
-    if (bytes < sizeof(struct imageHeader))
+    if (bytes < sizeof(struct ImageHeader))
         return false;
 
-    auto *header = (struct imageHeader *)buffer;
+    auto *header = (struct ImageHeader *)buffer;
     unsigned int length = header->length;
     unsigned int count = length;
     auto *update = new unsigned char [length];
@@ -205,7 +139,7 @@ bool Update() {
     fflush(stream);
     fclose(stream);
 
-    stream = fopen("update.img", "rb");
+    stream = fopen(UPDATE_IMG, "rb");
     if(stream == nullptr)
         return false;
 
