@@ -7,8 +7,8 @@
 #include <linux/sys_config.h>
 
 #define LED1 GPIOH(6)
-#define LED2 GPIOH(8) // GPIO(7)
-#define EXTI GPIOH(7)
+#define LED2 GPIOH(7) 
+#define EXTI GPIOL(12)
 
 /**
  * 0 - led

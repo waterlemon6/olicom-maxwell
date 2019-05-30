@@ -17,7 +17,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
     int dpi = 200;
     char color = 'C';
-    int videoPortOffset = -4;
+    int videoPortOffset = 1;
     char backdoor = 0;
 
     switch (argc) {
@@ -71,6 +71,10 @@ int main(int argc, char *argv[]) {
         case 's':
         case 'S':
             backdoor = 'S'; // Scan
+            break;
+        case 'm':
+        case 'M':
+            backdoor = 'M'; // Multi-scan
             break;
         case 'd':
         case 'D':
@@ -281,7 +285,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
 enum ExitEvent BackDoor(char backdoor) {
     enum ExitEvent event;
     if (backdoor == 'S') {
-        unsigned char buffer[22] = {
+        unsigned char buffer[] = {
                 0x01, 0x0B, 0x00, 0x00, 0x00,
                 0x00, 0x00, 0x00, 0x00, 0x06, 0xC0, 0x09, 0x60,
                 0x00, 0x00, 0x00, 0x00, 0x06, 0xC0, 0x09, 0x60,
@@ -289,14 +293,24 @@ enum ExitEvent BackDoor(char backdoor) {
         };
         event =  ActivateScanner(buffer, sizeof(buffer));
     }
+    else if (backdoor == 'M') {
+        unsigned char buffer[] = {
+                0x01, 0x0C, 0x00, 0x00, 0x00,
+                0x01, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0E, 0x10,
+                0x02, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x0E, 0x10,
+                0x02, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x09, 0x60,
+                0x01, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x09, 0x60
+        };
+        event =  ActivateScanner(buffer, sizeof(buffer));
+    }
     else if (backdoor == 'D') {
-        unsigned char buffer[5] = {
+        unsigned char buffer[] = {
                 0x01, 0x14, 0x00, 0x00, 0x00
         };
         event =  ActivateScanner(buffer, sizeof(buffer));
     }
     else if (backdoor == 'U') {
-        unsigned char buffer[5] = {
+        unsigned char buffer[] = {
                 0x01, 0x15, 0x00, 0x00, 0x00
         };
         event =  ActivateScanner(buffer, sizeof(buffer));

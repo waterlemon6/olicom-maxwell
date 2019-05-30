@@ -214,6 +214,7 @@ void CorrectionAdjust(int dpi, char color, int videoPortOffset) {
     videoPort.Open(VIDEO_PORT_PATH, O_RDWR);
     
     videoPort.SetVideoMode(VIDEO_MODE_NO_CORRECTION);
+    //videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
     videoPort.StartScan(1);
     VideoCoreWait(adjust.dpi, adjust.depth, 800);
 

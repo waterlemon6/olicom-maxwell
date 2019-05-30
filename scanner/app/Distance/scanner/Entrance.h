@@ -3,7 +3,7 @@
 
 #include "main.h"
 
-#define IMAGE_MAX_NUM 2
+#define IMAGE_MAX_NUM 9
 
 enum ScannerCommand {
     SCANNER_COMMAND_IDLE = 0,
@@ -15,7 +15,8 @@ enum ScannerCommand {
     SCANNER_COMMAND_ADJUST_BRIGHTNESS,
     SCANNER_COMMAND_GET_VERSION,
     SCANNER_COMMAND_UPDATE,
-    SCANNER_COMMAND_SLEEP
+    SCANNER_COMMAND_SLEEP,
+    SCANNER_COMMAND_MULTISCAN
 };
 
 enum Page {
@@ -47,6 +48,8 @@ private:
     void DeployCommand(unsigned char data);
     void SetCompressPage(unsigned char data);
     void SetCompressEdge(const unsigned char *data);
+    void SetMultiCompressPage(const unsigned char *data, unsigned int length);
+    void SetMultiCompressEdge(const unsigned char *data, unsigned int length);
     void ShowCompressMessage();
 public:
     Scanner() = default;

@@ -27,6 +27,9 @@ void Scanner::DeployCommand(unsigned char data) {
         case 0x0B:
             cmd_ = SCANNER_COMMAND_SCAN;
             break;
+        case 0x0C:
+            cmd_ = SCANNER_COMMAND_MULTISCAN;
+            break;
         case 0x0D:
             cmd_ = SCANNER_COMMAND_ADJUST_EXPOSURE;
             break;
@@ -125,13 +128,78 @@ void Scanner::SetCompressEdge(const unsigned char *data) {
     }
 }
 
+void Scanner::SetMultiCompressPage(const unsigned char *data, unsigned int length) {
+    for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
+        image_[i].page = PAGE_NULL;
+    }
+
+    for (unsigned int i = 0, j = 0; i < length; i += 9, j++) {
+        if (data[i] == 0x01)
+            image_[j].page = PAGE_OBVERSE_SIDE;
+        else if (data[i] == 0x02)
+            image_[j].page = PAGE_OPPOSITE_SIDE;
+    }
+}
+
+void Scanner::SetMultiCompressEdge(const unsigned char *data, unsigned int length) {
+    int minUpEdge = 0, maxDownEdge = 0, minLeftEdge = 0, maxRightEdge = 0;
+
+    switch (dpi_) {
+        case 200:
+        case 250:
+            minUpEdge = 1;
+            maxDownEdge = IMAGE_HEIGHT_200DPI;
+            minLeftEdge = CIS_EDGE_200DPI;
+            maxRightEdge = CIS_EDGE_200DPI + IMAGE_WIDTH_200DPI;
+            break;
+        case 300:
+            minUpEdge = 1;
+            maxDownEdge = IMAGE_HEIGHT_300DPI;
+            minLeftEdge = CIS_EDGE_300DPI;
+            maxRightEdge = CIS_EDGE_300DPI + IMAGE_WIDTH_300DPI;
+            break;
+        case 600:
+            minUpEdge = 1;
+            maxDownEdge = IMAGE_HEIGHT_600DPI;
+            minLeftEdge = CIS_EDGE_600DPI;
+            maxRightEdge = CIS_EDGE_600DPI + IMAGE_WIDTH_600DPI;
+            break;
+        default:
+            break;
+    }
+
+    for (unsigned int i = 1, j = 0; i < length; i += 9, j++) {
+        if (image_[j].page) {
+            image_[j].upEdge = (data[i+2] << 8) + data[i+3];
+            image_[j].downEdge = (data[i+6] << 8) + data[i+7];
+            image_[j].leftEdge = (data[i+0] << 8) + data[i+1];
+            image_[j].rightEdge = (data[i+4] << 8) + data[i+5];
+        }
+    }
+
+    for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
+        if (image_[i].page) {
+            image_[i].upEdge = LIMIT_MIN_MAX(image_[i].upEdge, minUpEdge, maxDownEdge);
+            image_[i].downEdge = LIMIT_MIN_MAX(image_[i].downEdge, image_[i].upEdge, maxDownEdge);
+            image_[i].leftEdge = LIMIT_MIN_MAX(image_[i].leftEdge, minLeftEdge, maxRightEdge) + videoPortOffset_;
+            image_[i].rightEdge = LIMIT_MIN_MAX(image_[i].rightEdge, image_[i].leftEdge, maxRightEdge) + videoPortOffset_;
+            image_[i].height = image_[i].downEdge - image_[i].upEdge;
+            image_[i].width = image_[i].rightEdge - image_[i].leftEdge;
+        }
+    }
+}
+
 void Scanner::ShowCompressMessage() {
     std::cout << "-------Config-------" << std::endl
               << "-cmd: " << cmd_ << std::endl
               << "-dpi: " << dpi_ << std::endl
               << "-color: " << color_ << std::endl;
     for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
-        std::cout << "-------Image"<< image_[i].page <<"-------" << std::endl
+        if (!image_[i].page)
+            continue;
+
+        std::cout << "-------Image"<< i <<"-------" << std::endl
+                  << "-page: " << image_[i].page << std::endl
                   << "-up: " << image_[i].upEdge << std::endl
                   << "-down: " << image_[i].downEdge << std::endl
                   << "-left: " << image_[i].leftEdge << std::endl
@@ -211,6 +279,10 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
         if (size != 22)
             return event;
     }
+    else if (cmd_ == SCANNER_COMMAND_MULTISCAN) {
+        if ((size-5) % 9 != 0)
+            return event;
+    }
     else {
         if (size != 5)
             return event;
@@ -226,6 +298,14 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             ShowCompressMessage();
             while (!GetExtiCount())
                 usleep(2000);
+            Scan(dpi_, depth_, image_);
+            break;
+
+        case SCANNER_COMMAND_MULTISCAN:
+            printf("Go to multi-scan.\n");
+            SetMultiCompressPage(&data[5], (unsigned int)(size - 9));
+            SetMultiCompressEdge(&data[5], (unsigned int)(size - 9));
+            ShowCompressMessage();
             Scan(dpi_, depth_, image_);
             break;
 

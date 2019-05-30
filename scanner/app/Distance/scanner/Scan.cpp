@@ -25,7 +25,7 @@ void Scan(int dpi, int depth, struct ImageSize *image)
       */
     int maxScanLines = 0;
     for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
-        if (image[i].downEdge > maxScanLines)
+        if (image[i].page && (image[i].downEdge > maxScanLines))
             maxScanLines = image[i].downEdge;
     }
     if (!maxScanLines) {
@@ -45,6 +45,7 @@ void Scan(int dpi, int depth, struct ImageSize *image)
     videoCore.SetAttr(dpi, depth);
     videoCore.Activate(videoPort.GetOriginImagePos());
 
+    videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
     videoPort.StartScan((unsigned short)videoCore.GetFrame());
     videoCore.UpdateFrame();
 

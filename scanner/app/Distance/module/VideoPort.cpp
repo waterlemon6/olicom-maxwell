@@ -48,6 +48,11 @@ void VideoPort::WriteCorrectionChannel(unsigned char *srcK, unsigned char *srcB,
             return;
     }
 
+    /*for (int i = 0; i < length; i++) {
+        srcK[i] = (unsigned char)((i+128) % 256);
+        srcB[i] = (unsigned char)(i % 256);
+    }*/
+
     WriteReg(FPGA_CORRS_REG, cmd);
     WriteData(srcK, (unsigned int)length);
     WriteData(srcB, (unsigned int)length);
