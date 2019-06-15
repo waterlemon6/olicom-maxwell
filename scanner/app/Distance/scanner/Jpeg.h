@@ -34,7 +34,7 @@ public:
     unsigned char* GetDst() { return dst_; };
     enum JpegCompressState GetState() { return step_; }
 
-    int StartCompress();
+    int StartCompress(int quality = 35);
     void WriteScanLines(unsigned char *src, unsigned int lines = 1);
     void FinishCompress();
     void UpdateCompress();

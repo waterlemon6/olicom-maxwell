@@ -18,7 +18,7 @@ using namespace std;
 pthread_t threadSendPicture;
 pthread_mutex_t mutexSendPicture[IMAGE_MAX_NUM];
 
-void Scan(int dpi, int depth, struct ImageSize *image)
+void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
 {
     /**
       * Calculate and check maximum scan lines.
@@ -45,7 +45,7 @@ void Scan(int dpi, int depth, struct ImageSize *image)
     videoCore.SetAttr(dpi, depth);
     videoCore.Activate(videoPort.GetOriginImagePos());
 
-    videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
+    //videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
     videoPort.StartScan((unsigned short)videoCore.GetFrame());
     videoCore.UpdateFrame();
 
@@ -54,8 +54,11 @@ void Scan(int dpi, int depth, struct ImageSize *image)
     for (unsigned int i = 0; i < IMAGE_MAX_NUM; i++) {
         jpeg[i].SetAttr(dpi_jpeg, depth);
         jpeg[i].SetSize((JDIMENSION)image[i].width, (JDIMENSION)image[i].height);
-        jpeg[i].SetHeaderTag(HeaderTag(image[i].page));
-        jpeg[i].StartCompress();
+        if (cmd == 0)
+            jpeg[i].SetHeaderTag(HeaderTag0(image[i].page));
+        else if (cmd == 1)
+            jpeg[i].SetHeaderTag(HeaderTag1(image[i].page, i));
+        jpeg[i].StartCompress(quality);
         pthread_mutex_init(&mutexSendPicture[i], nullptr);
     }
     pthread_create(&threadSendPicture, nullptr, SendPicture, jpeg);
@@ -227,11 +230,18 @@ void *SendPicture(void* jpeg) {
 #endif
 }
 
-unsigned char HeaderTag(enum Page page) {
+unsigned char HeaderTag0(enum Page page) {
     if (page == PAGE_OBVERSE_SIDE)
         return 0xFA;
     else if (page == PAGE_OPPOSITE_SIDE)
         return 0xFB;
+    else
+        return 0x00;
+}
+
+unsigned char HeaderTag1(enum Page page, unsigned int i) {
+    if (page)
+        return (unsigned char)(0xF0 + i + 1);
     else
         return 0x00;
 }

@@ -55,8 +55,8 @@
 /* frequency */
 #define FPGA_FREQ_200D1 1333 // 200dpi 1depth
 #define FPGA_FREQ_200D3 1333 // 200dpi 3depth
-#define FPGA_FREQ_250D1 1333 // 200dpi(work in 300dpi) 1depth
-#define FPGA_FREQ_250D3 1333 // 200dpi(work in 300dpi) 3depth
+#define FPGA_FREQ_250D1 2000 // 200dpi(work in 300dpi) 1depth
+#define FPGA_FREQ_250D3 2000 // 200dpi(work in 300dpi) 3depth
 #define FPGA_FREQ_300D1 2000 // 300dpi 1depth
 #define FPGA_FREQ_300D3 2000 // 300dpi 3depth
 #define FPGA_FREQ_600D1 4000 // 600dpi 1depth

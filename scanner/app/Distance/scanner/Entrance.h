@@ -12,7 +12,7 @@ enum ScannerCommand {
     SCANNER_COMMAND_DARK_SAMPLE,
     SCANNER_COMMAND_BRIGHT_SAMPLE,
     SCANNER_COMMAND_SWITCH_MODE,
-    SCANNER_COMMAND_ADJUST_BRIGHTNESS,
+    SCANNER_COMMAND_ADJUST_QUALITY,
     SCANNER_COMMAND_GET_VERSION,
     SCANNER_COMMAND_UPDATE,
     SCANNER_COMMAND_SLEEP,
@@ -41,6 +41,7 @@ private:
     static int dpi_;
     static int depth_;
     static int videoPortOffset_;
+    static int quality_;
 
     enum ScannerCommand cmd_ = SCANNER_COMMAND_IDLE;
     struct ImageSize image_[IMAGE_MAX_NUM] {};
@@ -54,7 +55,7 @@ private:
 public:
     Scanner() = default;
     ~Scanner() = default;
-    void SetMode(int dpi, char color, int videoPortOffset = 0);
+    void SetMode(int dpi, char color, int videoPortOffset = 0, int quality = 35);
     bool SetMode(unsigned char dpi_magic, unsigned char color_magic);
     enum ExitEvent Activate(unsigned char* data, int size);
 };

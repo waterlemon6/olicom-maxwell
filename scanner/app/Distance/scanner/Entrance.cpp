@@ -15,6 +15,7 @@ char Scanner::color_;
 int Scanner::dpi_;
 int Scanner::depth_;
 int Scanner::videoPortOffset_;
+int Scanner::quality_;
 
 void Scanner::DeployCommand(unsigned char data) {
     switch (data) {
@@ -34,7 +35,7 @@ void Scanner::DeployCommand(unsigned char data) {
             cmd_ = SCANNER_COMMAND_ADJUST_EXPOSURE;
             break;
         case 0x0E:
-            cmd_ = SCANNER_COMMAND_ADJUST_BRIGHTNESS;
+            cmd_ = SCANNER_COMMAND_ADJUST_QUALITY;
             break;
         case 0x0F:
             cmd_ = SCANNER_COMMAND_GET_VERSION;
@@ -125,6 +126,15 @@ void Scanner::SetCompressEdge(const unsigned char *data) {
             image_[i].height = image_[i].downEdge - image_[i].upEdge;
             image_[i].width = image_[i].rightEdge - image_[i].leftEdge;
         }
+
+        if (image_[i].page == PAGE_OBVERSE_SIDE) {
+            int left = image_[i].leftEdge;
+            int right = image_[i].rightEdge;
+            int width = minLeftEdge + maxRightEdge;
+
+            image_[i].leftEdge = width - right;
+            image_[i].rightEdge = width - left;
+        }
     }
 }
 
@@ -136,7 +146,7 @@ void Scanner::SetMultiCompressPage(const unsigned char *data, unsigned int lengt
     for (unsigned int i = 0, j = 0; i < length; i += 9, j++) {
         if (data[i] == 0x01)
             image_[j].page = PAGE_OBVERSE_SIDE;
-        else if (data[i] == 0x02)
+        else if (data[i] == 0x03)
             image_[j].page = PAGE_OPPOSITE_SIDE;
     }
 }
@@ -210,10 +220,11 @@ void Scanner::ShowCompressMessage() {
     std::cout << "--------------------" << std::endl;
 }
 
-void Scanner::SetMode(int dpi, char color, int videoPortOffset) {
+void Scanner::SetMode(int dpi, char color, int videoPortOffset, int quality) {
     dpi_ = dpi;
     color_ = color;
     depth_ = (color_ == 'C') ? 3 : 1;
+    quality_ = quality;
     if (!videoPortOffset)
         videoPortOffset_ = videoPortOffset;
 }
@@ -298,15 +309,18 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             ShowCompressMessage();
             while (!GetExtiCount())
                 usleep(2000);
-            Scan(dpi_, depth_, image_);
+            Scan(dpi_, depth_, image_, quality_, 0);
             break;
 
         case SCANNER_COMMAND_MULTISCAN:
             printf("Go to multi-scan.\n");
+            SetExtiCount(0);
             SetMultiCompressPage(&data[5], (unsigned int)(size - 9));
             SetMultiCompressEdge(&data[5], (unsigned int)(size - 9));
             ShowCompressMessage();
-            Scan(dpi_, depth_, image_);
+            while (!GetExtiCount())
+                usleep(2000);
+            Scan(dpi_, depth_, image_, quality_, 1);
             break;
 
         case SCANNER_COMMAND_ADJUST_EXPOSURE:
@@ -336,9 +350,13 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             PrinterHostQuickSend(&ack, 1);
             break;
 
-        case SCANNER_COMMAND_ADJUST_BRIGHTNESS:
-            printf("Go to adjust brightness.\n");
+        case SCANNER_COMMAND_ADJUST_QUALITY:
+            printf("Go to adjust quality.\n");
             SetColorMap(DeployColorMap(data[4]));
+            if (quality_  > 100)
+                quality_ = 100;
+            else
+                quality_ = data[3];
             PrinterHostQuickSend(&ack, 1);
             break;
 

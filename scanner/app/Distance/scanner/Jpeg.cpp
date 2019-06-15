@@ -21,7 +21,7 @@ Jpeg::~Jpeg() {
         free(dst_);
 }
 
-int Jpeg::StartCompress() {
+int Jpeg::StartCompress(int quality) {
     if ((!width_) || (!height_))
         return -1;
 
@@ -42,7 +42,7 @@ int Jpeg::StartCompress() {
     comp_.density_unit = 1;
     comp_.X_density = (unsigned short)dpi_;
     comp_.Y_density = (unsigned short)dpi_;
-    jpeg_set_quality(&comp_, 35, TRUE);
+    jpeg_set_quality(&comp_, quality, TRUE);
     comp_.dct_method = JDCT_FASTEST;
     jpeg_start_compress(&comp_, TRUE);
     step_ = JPEG_COMPRESS_STATE_SCANNING;
