@@ -70,6 +70,10 @@ unsigned int UpdateCheckImageHeader(unsigned char *buffer, unsigned int length) 
 }
 
 void UpdateWriteSection(struct SectionHeader *sectionHeader, unsigned char *data) {
+    char cmd[128];
+    sprintf(cmd, "rm %s", sectionHeader->name);
+    system(cmd);
+
     FILE *stream = fopen(sectionHeader->name, "wb");
     if (stream == nullptr)
         return;
@@ -78,7 +82,6 @@ void UpdateWriteSection(struct SectionHeader *sectionHeader, unsigned char *data
     fflush(stream);
     fclose(stream);
 
-    char cmd[128];
     sprintf(cmd, "chmod %o %s", sectionHeader->permission, sectionHeader->name);
     system(cmd);
 }

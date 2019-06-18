@@ -1092,12 +1092,13 @@ void printer_disconnect(struct usb_composite_dev *cdev)
 void printer_suspend(struct usb_composite_dev *cdev)
 {
 	printk(KERN_ALERT "[printer device]""suspend.\n");
+	schedule_work(&printer_resume_work);
 }
 
 void printer_resume(struct usb_composite_dev *cdev)
 {
 	printk(KERN_ALERT "[printer device]""resume.\n");
-	schedule_work(&printer_resume_work);
+	//schedule_work(&printer_resume_work);
 }
 
 static __refdata struct usb_composite_driver printer_driver = {

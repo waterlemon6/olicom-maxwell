@@ -84,6 +84,10 @@ int main(int argc, char *argv[]) {
         case 'U':
             backdoor = 'U'; // Update
             break;
+        case 'v':
+        case 'V':
+            backdoor = 'V'; // Version
+            break;
         case 0:
             break;
         default:
@@ -291,7 +295,7 @@ enum ExitEvent BackDoor(char backdoor) {
                 0x00, 0x00, 0x00, 0x00, 0x06, 0xC0, 0x09, 0x60,
                 0x02
         };
-        event =  ActivateScanner(buffer, sizeof(buffer));
+        event = ActivateScanner(buffer, sizeof(buffer));
     }
     else if (backdoor == 'M') {
         unsigned char buffer[] = {
@@ -301,19 +305,25 @@ enum ExitEvent BackDoor(char backdoor) {
                 0x03, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x09, 0x60,
                 0x01, 0x00, 0x00, 0x00, 0x00, 0x0A, 0x00, 0x09, 0x60
         };
-        event =  ActivateScanner(buffer, sizeof(buffer));
+        event = ActivateScanner(buffer, sizeof(buffer));
     }
     else if (backdoor == 'D') {
         unsigned char buffer[] = {
                 0x01, 0x14, 0x00, 0x00, 0x00
         };
-        event =  ActivateScanner(buffer, sizeof(buffer));
+        event = ActivateScanner(buffer, sizeof(buffer));
     }
     else if (backdoor == 'U') {
         unsigned char buffer[] = {
                 0x01, 0x15, 0x00, 0x00, 0x00
         };
-        event =  ActivateScanner(buffer, sizeof(buffer));
+        event = ActivateScanner(buffer, sizeof(buffer));
+    }
+    else if (backdoor == 'V') {
+        unsigned char buffer[] = {
+                0x01, 0x0F, 0x00, 0x00, 0x00
+        };
+        event = ActivateScanner(buffer, sizeof(buffer));
     }
     else
         event = EXIT_EVENT_COMMAND_ERROR;

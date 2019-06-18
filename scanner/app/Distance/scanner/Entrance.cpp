@@ -196,6 +196,15 @@ void Scanner::SetMultiCompressEdge(const unsigned char *data, unsigned int lengt
             image_[i].height = image_[i].downEdge - image_[i].upEdge;
             image_[i].width = image_[i].rightEdge - image_[i].leftEdge;
         }
+
+        if (image_[i].page == PAGE_OBVERSE_SIDE) {
+            int left = image_[i].leftEdge;
+            int right = image_[i].rightEdge;
+            int width = minLeftEdge + maxRightEdge;
+
+            image_[i].leftEdge = width - right;
+            image_[i].rightEdge = width - left;
+        }
     }
 }
 
@@ -280,7 +289,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x01, 0x00, 0x00};
+    unsigned char version[4] = {0x01, 0x01, 0x00, 0x02};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -361,7 +370,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             break;
 
         case SCANNER_COMMAND_GET_VERSION:
-            printf("Go to get version.\n");
+            printf("Go to get version %d.%d.%d.%d .\n", version[0], version[1], version[2], version[3]);
             PrinterHostQuickSend(version, sizeof(version));
             break;
 
