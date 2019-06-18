@@ -280,7 +280,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x00, 0x05, 0x00};
+    unsigned char version[4] = {0x01, 0x01, 0x00, 0x00};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -376,7 +376,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
 
         case SCANNER_COMMAND_SLEEP:
             printf("Go to sleep.\n");
-            PrinterHostQuickSend(&ack, 1);
+            usleep(100*1000);
             system("echo standby > /sys/power/state");
             usleep(100*1000);
             break;
