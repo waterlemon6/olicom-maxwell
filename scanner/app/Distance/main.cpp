@@ -17,7 +17,7 @@ using namespace std;
 int main(int argc, char *argv[]) {
     int dpi = 200;
     char color = 'C';
-    int videoPortOffset = 1;
+    int videoPortOffset = -4;
     char backdoor = 0;
 
     switch (argc) {

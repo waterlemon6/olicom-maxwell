@@ -234,8 +234,7 @@ void Scanner::SetMode(int dpi, char color, int videoPortOffset, int quality) {
     color_ = color;
     depth_ = (color_ == 'C') ? 3 : 1;
     quality_ = quality;
-    if (!videoPortOffset)
-        videoPortOffset_ = videoPortOffset;
+    videoPortOffset_ = videoPortOffset;
 }
 
 bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {

@@ -236,7 +236,7 @@ void LightAdjustmentInit(struct LightAdjustment *handler, int dpi, char color) {
             handler->maxLight = 2000;
             switch(handler->color) {
                 case 'C':
-                    handler->light.r2 = handler->light.r1 = 1500;
+                    handler->light.r2 = handler->light.r1 = 1700;
                     handler->light.g2 = handler->light.g1 = 1200;
                     handler->light.b2 = handler->light.b1 = 700;
                     handler->light.ir2 = handler->light.ir1 = 0;
@@ -262,7 +262,7 @@ void LightAdjustmentInit(struct LightAdjustment *handler, int dpi, char color) {
             handler->maxLight = 4000;
             switch(handler->color) {
                 case 'C':
-                    handler->light.r2 = handler->light.r1 = 2700;
+                    handler->light.r2 = handler->light.r1 = 3000;
                     handler->light.g2 = handler->light.g1 = 2100;
                     handler->light.b2 = handler->light.b1 = 1200;
                     handler->light.ir2 = handler->light.ir1 = 0;
