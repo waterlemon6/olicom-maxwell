@@ -28,6 +28,7 @@ int Jpeg::StartCompress(int quality) {
     if (depth_ == 3) {
         comp_.input_components = 3;
         comp_.in_color_space = JCS_YCbCr;
+        //comp_.in_color_space = JCS_YCbCr; // use RGB if ColorRemap1To1_NEON.
     }
     else if (depth_ == 1) {
         comp_.input_components = 1;

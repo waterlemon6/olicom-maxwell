@@ -14,6 +14,7 @@ void ChrominanceMapBuild();
 void SetColorMap(enum ColorMap level = COLOR_MAP_ORIGIN);
 enum ColorMap DeployColorMap(unsigned char data);
 void ColorRemap1To1(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset);
+void ColorRemap1To1_NEON(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset);
 void ColorRemap3To2(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset);
 
 #endif

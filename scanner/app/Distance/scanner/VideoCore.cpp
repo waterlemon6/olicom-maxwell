@@ -96,6 +96,7 @@ void VideoCore::SetAttr(int dpi, int depth) {
             attr_.channelWidth = VIDEO_PORT_WIDTH;
             attr_.frame = (depth_ == 3) ? 2 : 1;
             colorRemap = ColorRemap1To1;
+            //colorRemap = ColorRemap1To1_NEON; // ColorRemap1To1_NEON use RGB in JPEG.
             break;
         case 600:
             attr_.cisWidth = CIS_WIDTH_600DPI;

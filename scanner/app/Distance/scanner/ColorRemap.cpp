@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstring>
+#include <arm_neon.h>
 #include "ColorRemap.h"
 
 int Y_RTable[256], Y_GTable[256], Y_BTable[256];
@@ -152,6 +153,27 @@ void ColorRemap1To1(const unsigned char *src, unsigned char *dst, int depth, int
             dst[dstCount] = (unsigned char)((Y_RTable[R] + Y_GTable[G] + Y_BTable[B]) >> 16);
             dst[dstCount + 1] = (unsigned char)((Cb_RTable[R] + Cb_GTable[G] + Cb_BTable[B]) >> 16);
             dst[dstCount + 2] = (unsigned char)((Cr_RTable[R] + Cr_GTable[G] + Cr_BTable[B]) >> 16);
+        }
+    }
+    else if (depth == 1) {
+        for (srcCount = leftEdge; srcCount < rightEdge; srcCount += 1, dstCount += 1) {
+            dst[dstCount] = Y_YTable[src[srcCount]];
+        }
+    }
+}
+
+void ColorRemap1To1_NEON(const unsigned char *src, unsigned char *dst, int depth, int leftEdge, int rightEdge, int offset) {
+    int srcCount = 0, dstCount = 0;
+    int doubleOffset = offset * 2;
+    uint8x16x3_t s = {};
+
+    if (depth == 3) { // no brightness adjust
+        for (srcCount = leftEdge; srcCount < rightEdge; srcCount += 16, dstCount += 48) {
+            s.val[2] = vld1q_u8(src + srcCount); // B
+            s.val[0] = vld1q_u8(src + srcCount + offset); // R
+            s.val[1] = vld1q_u8(src + srcCount + doubleOffset); // G
+
+            vst3q_u8(dst + dstCount, s);
         }
     }
     else if (depth == 1) {
