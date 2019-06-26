@@ -126,15 +126,6 @@ void Scanner::SetCompressEdge(const unsigned char *data) {
             image_[i].height = image_[i].downEdge - image_[i].upEdge;
             image_[i].width = image_[i].rightEdge - image_[i].leftEdge;
         }
-
-        if (image_[i].page == PAGE_OBVERSE_SIDE) {
-            int left = image_[i].leftEdge;
-            int right = image_[i].rightEdge;
-            int width = minLeftEdge + maxRightEdge;
-
-            image_[i].leftEdge = width - right;
-            image_[i].rightEdge = width - left;
-        }
     }
 }
 
@@ -195,15 +186,6 @@ void Scanner::SetMultiCompressEdge(const unsigned char *data, unsigned int lengt
             image_[i].rightEdge = LIMIT_MIN_MAX(image_[i].rightEdge, image_[i].leftEdge, maxRightEdge) + videoPortOffset_;
             image_[i].height = image_[i].downEdge - image_[i].upEdge;
             image_[i].width = image_[i].rightEdge - image_[i].leftEdge;
-        }
-
-        if (image_[i].page == PAGE_OBVERSE_SIDE) {
-            int left = image_[i].leftEdge;
-            int right = image_[i].rightEdge;
-            int width = minLeftEdge + maxRightEdge;
-
-            image_[i].leftEdge = width - right;
-            image_[i].rightEdge = width - left;
         }
     }
 }
@@ -288,7 +270,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x01, 0x00, 0x02};
+    unsigned char version[4] = {0x01, 0x01, 0x01, 0x00};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
