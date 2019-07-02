@@ -2,6 +2,7 @@
 #include <poll.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>
 #include "main.h"
 #include "PrinterHost.h"
 
@@ -31,6 +32,12 @@ ssize_t PrinterHost::Read(unsigned char *data, unsigned long size) {
         retval = read(GetDescriptor(), data, size);
     }
     return retval;
+}
+
+int PrinterHost::GetStatus() {
+    int status = 0;
+    ioctl(GetDescriptor(), LPIOC_GET_STATUS(sizeof(int)), &status);
+    return status;
 }
 
 void PrinterHostQuickSend(unsigned char *data, unsigned long size)

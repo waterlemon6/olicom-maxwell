@@ -27,6 +27,7 @@
 #define IOCNR_GET_MANUFACTURER_STRING	8
 #define IOCNR_GET_PRODUCT_STRING			9
 #define IOCNR_GET_SERIAL_STRING				10
+#define IOCNR_GET_STATUS							11
 
 /* Get device_id string: */
 #define LPIOC_GET_DEVICE_ID(len) 						_IOC(_IOC_READ, 'P', IOCNR_GET_DEVICE_ID, len)
@@ -45,10 +46,12 @@
 #define LPIOC_GET_VID_PID(len) 							_IOC(_IOC_READ, 'P', IOCNR_GET_VID_PID, len)
 /* Perform class specific soft reset */
 #define LPIOC_SOFT_RESET 										_IOC(_IOC_NONE, 'P', IOCNR_SOFT_RESET, 0);
-/* Get string descriptor: */
+/* Get string descriptor */
 #define LPIOC_GET_MANUFACTURER_STRING(len)	_IOC(_IOC_READ, 'P', IOCNR_GET_MANUFACTURER_STRING, len)
 #define LPIOC_GET_PRODUCT_STRING(len)    		_IOC(_IOC_READ, 'P', IOCNR_GET_PRODUCT_STRING, len)
 #define LPIOC_GET_SERIAL_STRING(len)   			_IOC(_IOC_READ, 'P', IOCNR_GET_SERIAL_STRING, len)
+/* Get status */
+#define LPIOC_GET_STATUS(len)			          _IOC(_IOC_READ, 'P', IOCNR_GET_STATUS, len)
 
 /*
  * A DEVICE_ID string may include the printer's serial number.
@@ -550,6 +553,7 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 				length = usb_string(usblp->dev, usblp->dev->descriptor.iManufacturer, string, USBLP_STRING_SIZE);
 				if (length < 0) {
 					retval = length;
+					kfree(string);
 					goto done;
 				}
 				if (length > _IOC_SIZE(cmd))
@@ -557,6 +561,7 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 				if (copy_to_user((void __user *)arg, string, length)) {
 					retval = -EFAULT;
+					kfree(string);
 					goto done;
 				}
 				retval = length;
@@ -568,6 +573,7 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 				length = usb_string(usblp->dev, usblp->dev->descriptor.iProduct, string, USBLP_STRING_SIZE);
 				if (length < 0) {
 					retval = length;
+					kfree(string);
 					goto done;
 				}
 				if (length > _IOC_SIZE(cmd))
@@ -575,6 +581,7 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 				if (copy_to_user((void __user *)arg, string, length)) {
 					retval = -EFAULT;
+					kfree(string);
 					goto done;
 				}
 				retval = length;
@@ -586,6 +593,7 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 				length = usb_string(usblp->dev, usblp->dev->descriptor.iSerialNumber, string, USBLP_STRING_SIZE);
 				if (length < 0) {
 					retval = length;
+					kfree(string);
 					goto done;
 				}
 				if (length > _IOC_SIZE(cmd))
@@ -593,10 +601,22 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 				if (copy_to_user((void __user *)arg, string, length)) {
 					retval = -EFAULT;
+					kfree(string);
 					goto done;
 				}
 				retval = length;
 				kfree(string);
+				break;
+
+			case IOCNR_GET_STATUS:
+				if ((retval = usblp_read_status(usblp, usblp->statusbuf))) {
+					printk_ratelimited(KERN_ERR "usblp%d: failed reading printer status (%d)\n", usblp->minor, retval);
+					retval = -EIO;
+					goto done;
+				}
+				status = *usblp->statusbuf;
+				if (copy_to_user((void __user *)arg, &status, sizeof(int)))
+					retval = -EFAULT;
 				break;
 
 			default:
@@ -606,8 +626,7 @@ static long usblp_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 		switch (cmd) {
 			case LPGETSTATUS:
 				if ((retval = usblp_read_status(usblp, usblp->statusbuf))) {
-					printk_ratelimited(KERN_ERR "usblp%d: failed reading printer status (%d)\n",
-					 	usblp->minor, retval);
+					printk_ratelimited(KERN_ERR "usblp%d: failed reading printer status (%d)\n", usblp->minor, retval);
 					retval = -EIO;
 					goto done;
 				}

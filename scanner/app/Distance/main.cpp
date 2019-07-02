@@ -171,6 +171,12 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
 
     while (true) {
         /**
+         * Get status in printer and change status in PC
+         */
+        int status = printerHost.GetStatus();
+        printerDevice.SetStatus((unsigned char)status);
+
+        /**
          * transform data from PC to printer
          */
         if (!idle.empty()) {
