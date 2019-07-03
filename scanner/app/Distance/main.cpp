@@ -263,15 +263,17 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
             else
                 event = BackDoor(backdoor);
 
+            printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
+            printerHost.Open(PRINTER_HOST_PATH, O_RDWR);
+            unsigned char ack = 0x00;
+            printerHost.Write(&ack, 1);
+
             scanReq = nullptr;
             backdoor = 0;
             if (event == EXIT_EVENT_COMMAND_ERROR)
                 cout << "Scanner command error.\n" << endl;
             else if (event != EXIT_EVENT_NOTHING)
                 break;
-
-            printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
-            printerHost.Open(PRINTER_HOST_PATH, O_RDWR);
         }
     }
 

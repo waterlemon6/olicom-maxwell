@@ -269,8 +269,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 }
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
-    unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x01, 0x01, 0x03};
+    unsigned char version[4] = {0x01, 0x01, 0x01, 0x06};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -300,7 +299,6 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             while (!GetExtiCount())
                 usleep(2000);
             Scan(dpi_, depth_, image_, quality_, 0);
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_MULTISCAN:
@@ -312,25 +310,21 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             while (!GetExtiCount())
                 usleep(2000);
             Scan(dpi_, depth_, image_, quality_, 1);
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_ADJUST_EXPOSURE:
             printf("Go to adjust exposure.\n");
             LightAdjust(dpi_, color_);
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_DARK_SAMPLE:
             printf("Go to do dark sample.\n");
             CorrectionAdjustNoPaper(dpi_, color_, videoPortOffset_);
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_BRIGHT_SAMPLE:
             printf("Go to do bright sample.\n");
             CorrectionAdjust(dpi_, color_, videoPortOffset_);
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_SWITCH_MODE:
@@ -339,7 +333,6 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
                 VideoPortSetScanMode(dpi_, color_);
                 ShowCompressMessage();
             }
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_ADJUST_QUALITY:
@@ -349,7 +342,6 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
                 quality_ = 100;
             else
                 quality_ = data[3];
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_GET_VERSION:
@@ -363,7 +355,6 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
                 event = EXIT_EVENT_UPDATE_OK;
             else
                 event = EXIT_EVENT_UPDATE_FAILED;
-            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_SLEEP:
