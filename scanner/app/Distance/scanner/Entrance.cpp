@@ -270,7 +270,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
     unsigned char ack = 0xff;
-    unsigned char version[4] = {0x01, 0x01, 0x01, 0x02};
+    unsigned char version[4] = {0x01, 0x01, 0x01, 0x03};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -300,6 +300,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             while (!GetExtiCount())
                 usleep(2000);
             Scan(dpi_, depth_, image_, quality_, 0);
+            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_MULTISCAN:
@@ -311,6 +312,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             while (!GetExtiCount())
                 usleep(2000);
             Scan(dpi_, depth_, image_, quality_, 1);
+            PrinterHostQuickSend(&ack, 1);
             break;
 
         case SCANNER_COMMAND_ADJUST_EXPOSURE:
