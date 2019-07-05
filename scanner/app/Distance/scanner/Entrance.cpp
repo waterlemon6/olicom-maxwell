@@ -269,7 +269,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 }
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
-    unsigned char version[4] = {0x01, 0x01, 0x01, 0x06};
+    unsigned char version[4] = {0x01, 0x01, 0x02, 0x00};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -338,10 +338,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
         case SCANNER_COMMAND_ADJUST_QUALITY:
             printf("Go to adjust quality.\n");
             SetColorMap(DeployColorMap(data[4]));
-            if (quality_  > 100)
-                quality_ = 100;
-            else
-                quality_ = data[3];
+            quality_ = data[3] < 100 ? data[3] : 100;
             break;
 
         case SCANNER_COMMAND_GET_VERSION:
@@ -370,6 +367,44 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
             break;
     }
     return event;
+}
+
+bool Scanner::GetCorrectionParaEdge(unsigned char* data, int size, unsigned char *edge) {
+    if (data[0] != 0x01 || size != 5)
+        return false;
+
+    DeployCommand(data[1]);
+    if (cmd_ != SCANNER_COMMAND_BRIGHT_SAMPLE || dpi_ != 300 || color_ != 'C')
+        return false;
+
+    unsigned short edgePerCh[12] = {};
+    if (!CorrectionGetEdge(dpi_, color_, edgePerCh))
+        return false;
+
+    unsigned short edgeMax[4] = {};
+    edgeMax[0] = edgePerCh[0] > edgePerCh[4] ? edgePerCh[0] : edgePerCh[4];
+    edgeMax[0] = edgeMax[0] > edgePerCh[8] ? edgeMax[0] : edgePerCh[8];
+    edgeMax[1] = edgePerCh[1] < edgePerCh[5] ? edgePerCh[1] : edgePerCh[5];
+    edgeMax[1] = edgeMax[1] < edgePerCh[9] ? edgeMax[1] : edgePerCh[9];
+    edgeMax[2] = edgePerCh[2] > edgePerCh[6] ? edgePerCh[2] : edgePerCh[6];
+    edgeMax[2] = edgeMax[2] > edgePerCh[10] ? edgeMax[2] : edgePerCh[10];
+    edgeMax[3] = edgePerCh[3] < edgePerCh[7] ? edgePerCh[3] : edgePerCh[7];
+    edgeMax[3] = edgeMax[3] < edgePerCh[11] ? edgeMax[3] : edgePerCh[11];
+
+    edge[0] = (unsigned char)((edgeMax[0] >> 8) & 0xff);
+    edge[1] = (unsigned char)(edgeMax[0] & 0xff);
+    edge[2] = (unsigned char)((edgeMax[1] >> 8) & 0xff);
+    edge[3] = (unsigned char)(edgeMax[1] & 0xff);
+    edge[4] = (unsigned char)((edgeMax[2] >> 8) & 0xff);
+    edge[5] = (unsigned char)(edgeMax[2] & 0xff);
+    edge[6] = (unsigned char)((edgeMax[3] >> 8) & 0xff);
+    edge[7] = (unsigned char)(edgeMax[3] & 0xff);
+
+    std::cout << "edge R: " << edgePerCh[0] << "  " << edgePerCh[1] << "  " << edgePerCh[2] << "  " << edgePerCh[3] << "  " << std::endl
+              << "edge G: " << edgePerCh[4] << "  " << edgePerCh[5] << "  " << edgePerCh[6] << "  " << edgePerCh[7] << "  " << std::endl
+              << "edge B: " << edgePerCh[8] << "  " << edgePerCh[9] << "  " << edgePerCh[10] << "  " << edgePerCh[11] << "  " << std::endl
+              << "edge max: " << edgeMax[0] << "  " << edgeMax[1] << "  " << edgeMax[2] << "  " << edgeMax[3] << "  " << std::endl;
+    return true;
 }
 
 void SetScannerMode(int dpi, char color, int videoPortOffset) {
@@ -406,4 +441,9 @@ int GetExtiCount() {
     if (count)
         printf("Get valid exti count: %d.\n", count);
     return count;
+}
+
+bool GetScannerCorrectionParaEdge(unsigned char* data, int size, unsigned char *edge) {
+    Scanner scanner;
+    return scanner.GetCorrectionParaEdge(data, size, edge);
 }

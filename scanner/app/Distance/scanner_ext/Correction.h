@@ -3,6 +3,9 @@
 
 #include "VideoPort.h"
 
+#define LIGHT_STANDARD_UP 255
+#define LIGHT_STANDARD_DOWN 64
+
 struct CorrectionAdjust{
     int dpi;
     int depth;
@@ -12,7 +15,7 @@ struct CorrectionAdjust{
 };
 
 void VerticalSample(unsigned char *src, unsigned char *dst, int width, int height, int depth);
-void CorrectionMix(unsigned char *brightK, unsigned char *darkB, int length, float lightStandard);
+void CorrectionMix(unsigned char *brightK, unsigned char *darkB, int length);
 
 void CorrectionAdjustInit(struct CorrectionAdjust *handler, int dpi, char color);
 void CorrectionAdjustDeInit(struct CorrectionAdjust *handler);
@@ -25,5 +28,8 @@ void CorrectionAdjust(int dpi, char color, int videoPortOffset);
 void CorrectionAdjustNoPaperDataSave(struct CorrectionAdjust *handler);
 void CorrectionAdjustNoPaperDataLoad(struct CorrectionAdjust *handler);
 void CorrectionAdjustNoPaper(int dpi, char color, int videoPortOffset);
+
+bool CorrectionGetEdge(int dpi, char color, unsigned short *edge);
+void CorrectionChannelGetEdge(const unsigned char *channel, int width, unsigned short cisEdge, unsigned short *edge);
 
 #endif

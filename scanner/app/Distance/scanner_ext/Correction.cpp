@@ -17,24 +17,19 @@ void VerticalSample(unsigned char *src, unsigned char *dst, int width, int heigh
     }
 }
 
-void CorrectionMix(unsigned char *brightK, unsigned char *darkB, int length, float lightStandard)
+void CorrectionMix(unsigned char *brightK, unsigned char *darkB, int length)
 {
-    int i = 0;
-    float temp;
-
-    for(i = 0; i < length; i++) {
-        //*darkB = 0;
-        if(*brightK > 255)
-            *brightK = 0;
-        else if(*brightK <= 60)
-            *brightK = 0;
-        else {
-            temp = lightStandard / ((float)(*brightK - *darkB)) - 1;
-            *brightK = (unsigned char)(temp * 64.0f);
+    for(int i = 0; i < length; i++) {
+        //darkB[i] = 0;
+        if(brightK[i] <= LIGHT_STANDARD_DOWN || brightK[i] <= darkB[i]) {
+            brightK[i] = 0;
+            darkB[i] = 0;
         }
-
-        brightK++;
-        darkB++;
+        else {
+            float temp = LIGHT_STANDARD_UP / ((float)(brightK[i] - darkB[i])) - 1;
+            temp = temp > 0 ? temp : 0;
+            brightK[i] = (unsigned char)(temp * 64.0f);
+        }
     }
 }
 
@@ -248,10 +243,10 @@ void CorrectionAdjust(int dpi, char color, int videoPortOffset) {
     videoPort.Close();
 
     CorrectionAdjustNoPaperDataLoad(&adjust);
-    CorrectionMix(adjust.correction.RK, adjust.correction.RB, adjust.correction.width, 255);
+    CorrectionMix(adjust.correction.RK, adjust.correction.RB, adjust.correction.width);
     if (adjust.depth == 3) {
-        CorrectionMix(adjust.correction.GK, adjust.correction.GB, adjust.correction.width, 255);
-        CorrectionMix(adjust.correction.BK, adjust.correction.BB, adjust.correction.width, 255);
+        CorrectionMix(adjust.correction.GK, adjust.correction.GB, adjust.correction.width);
+        CorrectionMix(adjust.correction.BK, adjust.correction.BB, adjust.correction.width);
     }
     CorrectionAdjustSave(&adjust);
     CorrectionAdjustDeInit(&adjust);
@@ -360,4 +355,57 @@ void CorrectionAdjustNoPaper(int dpi, char color, int videoPortOffset)
 
     CorrectionAdjustNoPaperDataSave(&adjust);
     CorrectionAdjustDeInit(&adjust);
+}
+
+
+bool CorrectionGetEdge(int dpi, char color, unsigned short *edge) {
+    struct Correction correction = CorrectionAdjustLoad(dpi, color);
+    if (!correction.enable)
+        return false;
+
+    unsigned short cisEdge = 0;
+    switch (dpi) {
+        case 200:
+            cisEdge = CIS_EDGE_200DPI;
+            break;
+        case 300:
+            cisEdge = CIS_EDGE_300DPI;
+            break;
+        case 600:
+            cisEdge = CIS_EDGE_600DPI;
+            break;
+        default:
+            return false;
+    }
+
+    CorrectionChannelGetEdge(correction.RK, correction.width, cisEdge, &edge[0]);
+    CorrectionChannelGetEdge(correction.GK, correction.width, cisEdge, &edge[4]);
+    CorrectionChannelGetEdge(correction.BK, correction.width, cisEdge, &edge[8]);
+
+    delete [] (correction.RK);
+    delete [] (correction.RB);
+    delete [] (correction.GK);
+    delete [] (correction.GB);
+    delete [] (correction.BK);
+    delete [] (correction.BB);
+
+    return true;
+}
+
+void CorrectionChannelGetEdge(const unsigned char *channel, int width, unsigned short cisEdge, unsigned short *edge) {
+    int i = 0;
+
+    // obverse
+    for (i = width / 2 + cisEdge; i <= width - 1 - cisEdge && (!channel[i] || !channel[i + 1]); i++);
+    edge[0] = (unsigned short)(i - width / 2);
+
+    for (i = width - 1 - cisEdge; i >= width / 2 + cisEdge && (!channel[i] || !channel[i - 1]); i--);
+    edge[1] = (unsigned short)(i - width / 2);
+
+    // opposite
+    for (i = cisEdge; i <= width / 2 - 1 - cisEdge && (!channel[i] || !channel[i + 1]); i++);
+    edge[2] = (unsigned short)i;
+
+    for (i = width / 2 - 1 - cisEdge; i >= cisEdge && (!channel[i] || !channel[i - 1]); i--);
+    edge[3] = (unsigned short)i;
 }

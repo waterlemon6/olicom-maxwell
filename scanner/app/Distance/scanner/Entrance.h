@@ -58,6 +58,7 @@ public:
     void SetMode(int dpi, char color, int videoPortOffset = 0, int quality = 35);
     bool SetMode(unsigned char dpi_magic, unsigned char color_magic);
     enum ExitEvent Activate(unsigned char* data, int size);
+    bool GetCorrectionParaEdge(unsigned char* data, int size, unsigned char *edge);
 };
 
 void SetScannerMode(int dpi, char color, int maxScanLines);
@@ -65,5 +66,7 @@ enum ExitEvent ActivateScanner(unsigned char* data, int size);
 
 void SetExtiCount(int count);
 int GetExtiCount();
+
+bool GetScannerCorrectionParaEdge(unsigned char* data, int size, unsigned char *edge);
 
 #endif

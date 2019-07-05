@@ -159,6 +159,7 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
     if (!printerHost.IsOpen())
         return EXIT_EVENT_MODULES_NOT_INSTALLED;
 
+    int count = 0;
     ssize_t retval;
     enum ExitEvent event;
     struct switchRequest *req = nullptr, *scanReq = nullptr;
@@ -173,8 +174,13 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
         /**
          * Get status in printer and change status in PC
          */
-        int status = printerHost.GetStatus();
-        printerDevice.SetStatus((unsigned char)status);
+        if (count < 200)
+            count++;
+        else {
+            count = 0;
+            int status = printerHost.GetStatus();
+            printerDevice.SetStatus((unsigned char)status);
+        }
 
         /**
          * transform data from PC to printer
@@ -267,6 +273,11 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
             printerHost.Open(PRINTER_HOST_PATH, O_RDWR);
             unsigned char ack = 0x00;
             printerHost.Write(&ack, 1);
+            if (scanReq) {
+                unsigned char edge[8] = {};
+                if(GetScannerCorrectionParaEdge(scanReq->position, (int)scanReq->length, edge))
+                    printerHost.Write(edge, 8);
+            }
 
             scanReq = nullptr;
             backdoor = 0;
