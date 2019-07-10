@@ -391,6 +391,18 @@ bool Scanner::GetCorrectionParaEdge(unsigned char* data, int size, unsigned char
     edgeMax[3] = edgePerCh[3] < edgePerCh[7] ? edgePerCh[3] : edgePerCh[7];
     edgeMax[3] = edgeMax[3] < edgePerCh[11] ? edgeMax[3] : edgePerCh[11];
 
+    edgeMax[0] += videoPortOffset_;
+    edgeMax[1] += videoPortOffset_;
+    edgeMax[2] += videoPortOffset_;
+    edgeMax[3] += videoPortOffset_;
+
+    unsigned short cisEdge = CIS_EDGE_300DPI;
+    unsigned short cisWidth = CIS_WIDTH_300DPI;
+    edgeMax[0] = edgeMax[0] > cisEdge ? edgeMax[0] : cisEdge;
+    edgeMax[1] = edgeMax[1] < cisWidth - cisEdge ? edgeMax[1] : cisWidth - cisEdge;
+    edgeMax[2] = edgeMax[2] > cisEdge ? edgeMax[2] : cisEdge;
+    edgeMax[3] = edgeMax[3] < cisWidth - cisEdge ? edgeMax[3] : cisWidth - cisEdge;
+
     edge[0] = (unsigned char)((edgeMax[0] >> 8) & 0xff);
     edge[1] = (unsigned char)(edgeMax[0] & 0xff);
     edge[2] = (unsigned char)((edgeMax[1] >> 8) & 0xff);
