@@ -269,7 +269,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 }
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
-    unsigned char version[4] = {0x01, 0x01, 0x02, 0x00};
+    unsigned char version[4] = {0x01, 0x01, 0x03, 0x00};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;

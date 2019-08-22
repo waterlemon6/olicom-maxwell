@@ -517,7 +517,8 @@ static ssize_t printer_write(struct file *fd, const char __user *buf, size_t len
 			/* If the data amount is not a multple of the
 			 * maxpacket size then send a zero length packet.
 			 */
-			req->zero = ((len % dev->in_ep->maxpacket) == 0);
+			req->zero = 0;
+			//req->zero = ((len % dev->in_ep->maxpacket) == 0);
 
 		/* Don't leave irqs off while doing memory copies */
 		spin_unlock_irqrestore(&dev->lock, flags);
