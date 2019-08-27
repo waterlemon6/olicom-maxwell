@@ -65,15 +65,25 @@ const unsigned char colorMap2[256] = {
         255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255
 };
 
-void GrayScaleMapBuild(const unsigned char *map) {
-    memcpy(Y_YTable, map, 256);
+void GrayScaleMapBuild(const unsigned char *map, int gamma) {
+    float level = ((float)gamma - 50.0f) / 70.0f + 1;
+    for (int i = 0; i < 256; i++) {
+        float pixel = map[i] * level;
+        pixel = pixel < 255 ? pixel : 255;
+
+        Y_YTable[i] = (unsigned char) pixel;
+    }
 }
 
-void LuminanceMapBuild(const unsigned char *map) {
+void LuminanceMapBuild(const unsigned char *map, int gamma) {
+    float level = ((float)gamma - 50.0f) / 70.0f + 1;
     for (int i = 0; i < 256; i++) {
-        Y_RTable[i] = (int) std::lround((float)map[i] * (0.299f * 65536.0f));
-        Y_GTable[i] = (int) std::lround((float)map[i] * (0.587f * 65536.0f));
-        Y_BTable[i] = (int) std::lround((float)map[i] * (0.114f * 65536.0f));
+        float pixel = map[i] * level;
+        pixel = pixel < 255 ? pixel : 255;
+
+        Y_RTable[i] = (int) std::lround(pixel * (0.299f * 65536.0f));
+        Y_GTable[i] = (int) std::lround(pixel * (0.587f * 65536.0f));
+        Y_BTable[i] = (int) std::lround(pixel * (0.114f * 65536.0f));
     }
 }
 
@@ -88,7 +98,7 @@ void ChrominanceMapBuild() {
     }
 }
 
-void SetColorMap(enum ColorMap level) {
+void SetColorMap(enum ColorMap level, int gamma) {
     static bool init = false;
     const unsigned char *map = colorMap0;
 
@@ -106,8 +116,8 @@ void SetColorMap(enum ColorMap level) {
             break;
     }
 
-    GrayScaleMapBuild(map);
-    LuminanceMapBuild(map);
+    GrayScaleMapBuild(map, gamma);
+    LuminanceMapBuild(map, gamma);
     if (!init) {
         ChrominanceMapBuild();
         init = true;

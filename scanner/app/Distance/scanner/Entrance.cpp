@@ -269,7 +269,7 @@ bool Scanner::SetMode(unsigned char dpi_magic, unsigned char color_magic) {
 }
 
 enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
-    unsigned char version[4] = {0x01, 0x01, 0x03, 0x00};
+    unsigned char version[4] = {0x01, 0x01, 0x04, 0x00};
     enum ExitEvent event = EXIT_EVENT_COMMAND_ERROR;
     if (data[0] != 0x01)
         return event;
@@ -337,7 +337,7 @@ enum ExitEvent Scanner::Activate(unsigned char *data, int size) {
 
         case SCANNER_COMMAND_ADJUST_QUALITY:
             printf("Go to adjust quality.\n");
-            SetColorMap(DeployColorMap(data[4]));
+            SetColorMap(DeployColorMap(data[4]), data[2] < 100 ? data[2] : 100);
             quality_ = data[3] < 100 ? data[3] : 100;
             break;
 
