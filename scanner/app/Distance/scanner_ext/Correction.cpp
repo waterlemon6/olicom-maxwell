@@ -21,7 +21,7 @@ void CorrectionMix(unsigned char *brightK, unsigned char *darkB, int length)
 {
     for(int i = 0; i < length; i++) {
         //darkB[i] = 0;
-        if(brightK[i] <= LIGHT_STANDARD_DOWN || brightK[i] <= darkB[i]) {
+        if((brightK[i] <= LIGHT_STANDARD_DOWN) || (brightK[i] <= darkB[i])) {
             brightK[i] = 0;
             darkB[i] = 0;
         }
@@ -319,6 +319,9 @@ void CorrectionAdjustNoPaper(int dpi, char color, int videoPortOffset)
 
     VideoPort videoPort;
     videoPort.Open(VIDEO_PORT_PATH, O_RDWR);
+
+    struct Light light {.enable = true};
+    videoPort.WriteLightPara(light);
 
     videoPort.SetVideoMode(VIDEO_MODE_NO_CORRECTION);
     videoPort.StartScan(1);
