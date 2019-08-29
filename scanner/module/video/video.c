@@ -321,6 +321,7 @@ static int video_mmap(struct file *filp, struct vm_area_struct *vma)
 	return remap_pfn_range(vma, start, (virt_to_phys(imageBuf) >> PAGE_SHIFT), size, vma->vm_page_prot);
 }
 
+#define ADC_START_REG 1550
 extern unsigned char *pBootMemory;
 static int video_init(void)
 {
@@ -334,6 +335,10 @@ static int video_init(void)
 	misc_register(&video_miscdev);
 	bsp_csi_init();
 	spi_gpio_init();
+
+	spi_reg_write_word((ADC_START_REG << 16) | 1);
+	mdelay(2);
+	spi_reg_write_word((ADC_START_REG << 16) | 0);
 
 	return 0;
 }
