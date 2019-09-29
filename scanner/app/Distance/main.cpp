@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fcntl.h>
 #include <queue>
+#include <sys/time.h>
 
 #include "main.h"
 #include "VideoPort.h"
@@ -262,12 +263,19 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
             printerDevice.Close();
             printerHost.Close();
 
+            struct timeval tv {};
+            gettimeofday(&tv, nullptr);
+            std::cout << "Command begin, sec: " << tv.tv_sec << " usec: " << tv.tv_usec << std::endl;
+
             if (scanReq) {
                 event = ActivateScanner(scanReq->position, (int)scanReq->length);
                 idle.push(scanReq);
             }
             else
                 event = BackDoor(backdoor);
+
+            gettimeofday(&tv, nullptr);
+            std::cout << "Command end, sec: " << tv.tv_sec << " usec: " << tv.tv_usec << std::endl;
 
             printerDevice.Open(PRINTER_DEVICE_PATH, O_RDWR);
             printerHost.Open(PRINTER_HOST_PATH, O_RDWR);

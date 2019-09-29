@@ -66,9 +66,9 @@ const unsigned char colorMap2[256] = {
 };
 
 void GrayScaleMapBuild(const unsigned char *map, int gamma) {
-    float level = ((float)gamma - 50.0f) / 70.0f + 1;
+    double level = 1.0 / (((double)gamma - 50.0) / 70.0 + 1.0);
     for (int i = 0; i < 256; i++) {
-        float pixel = map[i] * level;
+        double pixel = pow((double)map[i] / 255.0, level) * 255.0;
         pixel = pixel < 255 ? pixel : 255;
 
         Y_YTable[i] = (unsigned char) pixel;
@@ -76,25 +76,25 @@ void GrayScaleMapBuild(const unsigned char *map, int gamma) {
 }
 
 void LuminanceMapBuild(const unsigned char *map, int gamma) {
-    float level = ((float)gamma - 50.0f) / 70.0f + 1;
+    double level = 1.0 / (((double)gamma - 50.0) / 70.0 + 1.0);
     for (int i = 0; i < 256; i++) {
-        float pixel = map[i] * level;
+        double pixel = pow((double)map[i] / 255.0, level) * 255.0;
         pixel = pixel < 255 ? pixel : 255;
 
-        Y_RTable[i] = (int) std::lround(pixel * (0.299f * 65536.0f));
-        Y_GTable[i] = (int) std::lround(pixel * (0.587f * 65536.0f));
-        Y_BTable[i] = (int) std::lround(pixel * (0.114f * 65536.0f));
+        Y_RTable[i] = (int) std::lround(pixel * (0.299 * 65536.0));
+        Y_GTable[i] = (int) std::lround(pixel * (0.587 * 65536.0));
+        Y_BTable[i] = (int) std::lround(pixel * (0.114 * 65536.0));
     }
 }
 
 void ChrominanceMapBuild() {
     for (int i = 0; i < 256; i++) {
-        Cb_RTable[i] = (int) std::lround((float)i * (-0.169f * 65536.0f));
-        Cb_GTable[i] = (int) std::lround((float)i * (-0.331f * 65536.0f));
-        Cb_BTable[i] = (int) std::lround((float)i * (0.500f * 65536.0f) - (128 << 16));
-        Cr_RTable[i] = (int) std::lround((float)i * (0.500f * 65536.0f));
-        Cr_GTable[i] = (int) std::lround((float)i * (-0.419f * 65536.0f));
-        Cr_BTable[i] = (int) std::lround((float)i * (-0.081f * 65536.0f) - (128 << 16));
+        Cb_RTable[i] = (int) std::lround((float)i * (-0.169 * 65536.0));
+        Cb_GTable[i] = (int) std::lround((float)i * (-0.331 * 65536.0));
+        Cb_BTable[i] = (int) std::lround((float)i * (0.500 * 65536.0) - (128 << 16));
+        Cr_RTable[i] = (int) std::lround((float)i * (0.500 * 65536.0));
+        Cr_GTable[i] = (int) std::lround((float)i * (-0.419 * 65536.0));
+        Cr_BTable[i] = (int) std::lround((float)i * (-0.081 * 65536.0) - (128 << 16));
     }
 }
 
