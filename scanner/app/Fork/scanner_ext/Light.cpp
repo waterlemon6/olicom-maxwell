@@ -130,22 +130,22 @@ int LightAdjustmentJudge(struct LightAdjustment *handler) {
     printf("B   %4d         %4d       %4d            %4d.        \n", handler->light.b1, handler->maxTopB, handler->light.b2, handler->maxBottomB);
     printf("IR  %4d         %4d       %4d            %4d.        \n", handler->light.ir1, handler->maxTopIR, handler->light.ir2, handler->maxBottomIR);
 
-    handler->light.r1 += (handler->aim - handler->maxTopR) * handler->proportion;
+    handler->light.r1 += (handler->aim - handler->maxTopR) * handler->pTopR;
     handler->light.r1 = (unsigned short) LIMIT_MIN_MAX(handler->light.r1, 100, handler->maxLight);
-    handler->light.g1 += (handler->aim - handler->maxTopG) * handler->proportion;
+    handler->light.g1 += (handler->aim - handler->maxTopG) * handler->pTopG;
     handler->light.g1 = (unsigned short) LIMIT_MIN_MAX(handler->light.g1, 100, handler->maxLight);
-    handler->light.b1 += (handler->aim - handler->maxTopB) * handler->proportion;
+    handler->light.b1 += (handler->aim - handler->maxTopB) * handler->pTopB;
     handler->light.b1 = (unsigned short) LIMIT_MIN_MAX(handler->light.b1, 100, handler->maxLight);
-    handler->light.ir1 += (handler->aim - handler->maxTopIR) * handler->proportion;
+    handler->light.ir1 += (handler->aim - handler->maxTopIR) * handler->pTopIR;
     handler->light.ir1 = (unsigned short) LIMIT_MIN_MAX(handler->light.ir1, 100, handler->maxLight);
 
-    handler->light.r2 += (handler->aim - handler->maxBottomR) * handler->proportion;
+    handler->light.r2 += (handler->aim - handler->maxBottomR) * handler->pBottomR;
     handler->light.r2 = (unsigned short) LIMIT_MIN_MAX(handler->light.r2, 100, handler->maxLight);
-    handler->light.g2 += (handler->aim - handler->maxBottomG) * handler->proportion;
+    handler->light.g2 += (handler->aim - handler->maxBottomG) * handler->pBottomG;
     handler->light.g2 = (unsigned short) LIMIT_MIN_MAX(handler->light.g2, 100, handler->maxLight);
-    handler->light.b2 += (handler->aim - handler->maxBottomB) * handler->proportion;
+    handler->light.b2 += (handler->aim - handler->maxBottomB) * handler->pBottomB;
     handler->light.b2 = (unsigned short) LIMIT_MIN_MAX(handler->light.b2, 100, handler->maxLight);
-    handler->light.ir2 += (handler->aim - handler->maxBottomIR) * handler->proportion;
+    handler->light.ir2 += (handler->aim - handler->maxBottomIR) * handler->pBottomIR;
     handler->light.ir2 = (unsigned short) LIMIT_MIN_MAX(handler->light.ir2, 100, handler->maxLight);
 
     switch(handler->color) {
@@ -291,7 +291,10 @@ void LightAdjustmentInit(struct LightAdjustment *handler, int dpi, char color) {
     switch (handler->color) {
         case 'C':
             handler->depth = 3;
-            handler->proportion = 2;
+            handler->pBottomR = handler->pTopR = 2;
+            handler->pBottomG = handler->pTopG = 2;
+            handler->pBottomB = handler->pTopB = 2;
+            handler->pBottomIR = handler->pTopIR = 2;
             handler->sampleR = new unsigned char [handler->sampleWidth];
             handler->sampleG = new unsigned char [handler->sampleWidth];
             handler->sampleB = new unsigned char [handler->sampleWidth];
@@ -299,7 +302,10 @@ void LightAdjustmentInit(struct LightAdjustment *handler, int dpi, char color) {
             break;
         case 'G':
             handler->depth = 1;
-            handler->proportion = 0.7;
+            handler->pBottomR = handler->pTopR = 0.7;
+            handler->pBottomG = handler->pTopG = 0.7;
+            handler->pBottomB = handler->pTopB = 0.7;
+            handler->pBottomIR = handler->pTopIR = 0.7;
             handler->sampleR = new unsigned char [handler->sampleWidth];
             handler->sampleG = nullptr;
             handler->sampleB = nullptr;
@@ -307,7 +313,10 @@ void LightAdjustmentInit(struct LightAdjustment *handler, int dpi, char color) {
             break;
         case 'I':
             handler->depth = 1;
-            handler->proportion = 2;
+            handler->pBottomR = handler->pTopR = 2;
+            handler->pBottomG = handler->pTopG = 2;
+            handler->pBottomB = handler->pTopB = 2;
+            handler->pBottomIR = handler->pTopIR = 2;
             handler->sampleR = nullptr;
             handler->sampleG = nullptr;
             handler->sampleB = nullptr;
@@ -480,11 +489,16 @@ void LightAdjust(int dpi, char color) {
         printf("G   %4d         %4d       %4d            %4d.        \n", adjust.light.g1, adjust.maxTopG, adjust.light.g2, adjust.maxBottomG);
         printf("B   %4d         %4d       %4d            %4d.        \n", adjust.light.b1, adjust.maxTopB, adjust.light.b2, adjust.maxBottomB);
         printf("IR  %4d         %4d       %4d            %4d.        \n", adjust.light.ir1, adjust.maxTopIR, adjust.light.ir2, adjust.maxBottomIR);
-
     }
 
     struct LightAdjustment adjustB = adjust;
     LightAdjustmentGoToAim(&adjustA, &adjustB, &adjust);
+    printf("    top p - bottom p.\n");
+    printf("R   %f - %f\n", adjust.pTopR, adjust.pBottomR);
+    printf("G   %f - %f\n", adjust.pTopG, adjust.pBottomG);
+    printf("B   %f - %f\n", adjust.pTopB, adjust.pBottomB);
+    printf("IR  %f - %f\n", adjust.pTopIR, adjust.pBottomIR);
+
     /* Extend end */
 
     do {
@@ -585,16 +599,16 @@ int LightAdjustmentPreJudge(struct LightAdjustment *handler) {
 void LightAdjustmentGoToAim(struct LightAdjustment *adjustA, struct LightAdjustment *adjustB, struct LightAdjustment *aim) {
     switch (aim->color) {
         case 'C':
-            aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim);
-            aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim);
-            aim->light.g1 = LightAdjustmentCalculateAim(adjustA->light.g1, adjustA->maxTopG, adjustB->light.g1, adjustB->maxTopG, aim->aim);
-            aim->light.g2 = LightAdjustmentCalculateAim(adjustA->light.g2, adjustA->maxBottomG, adjustB->light.g2, adjustB->maxBottomG, aim->aim);
-            aim->light.b1 = LightAdjustmentCalculateAim(adjustA->light.b1, adjustA->maxTopB, adjustB->light.b1, adjustB->maxTopR, aim->aim);
-            aim->light.b2 = LightAdjustmentCalculateAim(adjustA->light.b2, adjustA->maxBottomB, adjustB->light.b2, adjustB->maxBottomR, aim->aim);
+            aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim, &aim->pTopR);
+            aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim, &aim->pBottomR);
+            aim->light.g1 = LightAdjustmentCalculateAim(adjustA->light.g1, adjustA->maxTopG, adjustB->light.g1, adjustB->maxTopG, aim->aim, &aim->pTopG);
+            aim->light.g2 = LightAdjustmentCalculateAim(adjustA->light.g2, adjustA->maxBottomG, adjustB->light.g2, adjustB->maxBottomG, aim->aim, &aim->pBottomG);
+            aim->light.b1 = LightAdjustmentCalculateAim(adjustA->light.b1, adjustA->maxTopB, adjustB->light.b1, adjustB->maxTopR, aim->aim, &aim->pTopB);
+            aim->light.b2 = LightAdjustmentCalculateAim(adjustA->light.b2, adjustA->maxBottomB, adjustB->light.b2, adjustB->maxBottomR, aim->aim, &aim->pBottomB);
             break;
         case 'G':
-            aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim);
-            aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim);
+            aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim, &aim->pTopR);
+            aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim, &aim->pBottomR);
             aim->light.g1 = (unsigned short) (aim->light.r1 * 0.8);
             aim->light.g2 = (unsigned short) (aim->light.r2 * 0.8);
             aim->light.b1 = (unsigned short) (aim->light.r1 * 0.6);
@@ -606,7 +620,8 @@ void LightAdjustmentGoToAim(struct LightAdjustment *adjustA, struct LightAdjustm
 
 }
 
-unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, unsigned short l2, unsigned char m2, unsigned char m3) {
+unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, unsigned short l2,
+                                           unsigned char m2, unsigned char m3, float *p) {
     float x1 = l1, y1 = m1;
     float x2 = l2, y2 = m2;
     float x3, y3 = m3;
@@ -615,5 +630,6 @@ unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, 
     float b = y1 - k * x1;
 
     x3 = (y3 - b) / k;
+    *p = 1 / k;
     return (unsigned short)x3;
 }

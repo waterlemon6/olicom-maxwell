@@ -32,7 +32,15 @@ struct LightAdjustment{
     unsigned char overtime;
     unsigned char aim;
     unsigned char error;
-    float proportion;
+
+    float pTopR;
+    float pTopG;
+    float pTopB;
+    float pTopIR;
+    float pBottomR;
+    float pBottomG;
+    float pBottomB;
+    float pBottomIR;
 };
 
 unsigned char GetMaxPixelInOneLine(const unsigned char *src, int length);
@@ -51,5 +59,6 @@ void LightAdjust(int dpi, char color);
 
 int LightAdjustmentPreJudge(struct LightAdjustment *handler);
 void LightAdjustmentGoToAim(struct LightAdjustment *adjustA, struct LightAdjustment *adjustB, struct LightAdjustment *aim);
-unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, unsigned short l2, unsigned char m2, unsigned char m3);
+unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, unsigned short l2,
+                                           unsigned char m2, unsigned char m3, float *p);
 #endif
