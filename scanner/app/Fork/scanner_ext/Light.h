@@ -48,4 +48,8 @@ struct Light LightAdjustmentDefault(int dpi, char color);
 struct Light LightAdjustmentLoad(int dpi, char color);
 
 void LightAdjust(int dpi, char color);
+
+int LightAdjustmentPreJudge(struct LightAdjustment *handler);
+void LightAdjustmentGoToAim(struct LightAdjustment *adjustA, struct LightAdjustment *adjustB, struct LightAdjustment *aim);
+unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, unsigned short l2, unsigned char m2, unsigned char m3);
 #endif

@@ -124,6 +124,12 @@ int LightAdjustmentJudge(struct LightAdjustment *handler) {
         return 1;
     }
 
+    printf("    top light   top max   bottom light   bottom max.\n");
+    printf("R   %4d         %4d       %4d            %4d.        \n", handler->light.r1, handler->maxTopR, handler->light.r2, handler->maxBottomR);
+    printf("G   %4d         %4d       %4d            %4d.        \n", handler->light.g1, handler->maxTopG, handler->light.g2, handler->maxBottomG);
+    printf("B   %4d         %4d       %4d            %4d.        \n", handler->light.b1, handler->maxTopB, handler->light.b2, handler->maxBottomB);
+    printf("IR  %4d         %4d       %4d            %4d.        \n", handler->light.ir1, handler->maxTopIR, handler->light.ir2, handler->maxBottomIR);
+
     handler->light.r1 += (handler->aim - handler->maxTopR) * handler->proportion;
     handler->light.r1 = (unsigned short) LIMIT_MIN_MAX(handler->light.r1, 100, handler->maxLight);
     handler->light.g1 += (handler->aim - handler->maxTopG) * handler->proportion;
@@ -187,11 +193,6 @@ int LightAdjustmentJudge(struct LightAdjustment *handler) {
             break;
     }
 
-    printf("    top light   top max   bottom light   bottom max.\n");
-    printf("R   %4d         %4d       %4d            %4d.        \n", handler->light.r1, handler->maxTopR, handler->light.r2, handler->maxBottomR);
-    printf("G   %4d         %4d       %4d            %4d.        \n", handler->light.g1, handler->maxTopG, handler->light.g2, handler->maxBottomG);
-    printf("B   %4d         %4d       %4d            %4d.        \n", handler->light.b1, handler->maxTopB, handler->light.b2, handler->maxBottomB);
-    printf("IR  %4d         %4d       %4d            %4d.        \n", handler->light.ir1, handler->maxTopIR, handler->light.ir2, handler->maxBottomIR);
     return 0;
 }
 
@@ -422,6 +423,70 @@ void LightAdjust(int dpi, char color) {
     LightAdjustmentInit(&adjust, dpi, color);
     adjust.light.enable = true;
 
+    /* Extend begin */
+    switch (color) {
+        case 'C':
+            adjust.light.r2 = adjust.light.r1 = adjust.maxLight;
+            adjust.light.g2 = adjust.light.g1 = adjust.maxLight;
+            adjust.light.b2 = adjust.light.b1 = adjust.maxLight;
+            break;
+        case 'G':
+            adjust.light.r2 = adjust.light.r1 = adjust.maxLight;
+            adjust.light.g2 = adjust.light.g1 = (unsigned short) (adjust.light.r1 * 0.8);
+            adjust.light.b2 = adjust.light.b1 = (unsigned short) (adjust.light.r1 * 0.6);
+            break;
+        default:
+            break;
+    }
+
+    do {
+        VideoPort videoPort;
+        videoPort.Open(VIDEO_PORT_PATH, O_RDWR);
+
+        videoPort.SetVideoMode(VIDEO_MODE_NO_CORRECTION);
+        videoPort.WriteLightPara(adjust.light);
+        videoPort.StartScan(1);
+        VideoCoreWait(dpi, depth, 150);
+
+        GetMaxPixelInColorSpace(&adjust, videoPort.GetOriginImagePos() + VIDEO_PORT_WIDTH * 30, 100);
+
+        videoPort.StopScan();
+        videoPort.Close();
+    } while (!LightAdjustmentPreJudge(&adjust));
+
+    struct LightAdjustment adjustA = adjust;
+    adjust.light.r1 /= 2;
+    adjust.light.r2 /= 2;
+    adjust.light.g1 /= 2;
+    adjust.light.g2 /= 2;
+    adjust.light.b1 /= 2;
+    adjust.light.b2 /= 2;
+    {
+        VideoPort videoPort;
+        videoPort.Open(VIDEO_PORT_PATH, O_RDWR);
+
+        videoPort.SetVideoMode(VIDEO_MODE_NO_CORRECTION);
+        videoPort.WriteLightPara(adjust.light);
+        videoPort.StartScan(1);
+        VideoCoreWait(dpi, depth, 150);
+
+        GetMaxPixelInColorSpace(&adjust, videoPort.GetOriginImagePos() + VIDEO_PORT_WIDTH * 30, 100);
+
+        videoPort.StopScan();
+        videoPort.Close();
+
+        printf("    top light   top max   bottom light   bottom max.\n");
+        printf("R   %4d         %4d       %4d            %4d.        \n", adjust.light.r1, adjust.maxTopR, adjust.light.r2, adjust.maxBottomR);
+        printf("G   %4d         %4d       %4d            %4d.        \n", adjust.light.g1, adjust.maxTopG, adjust.light.g2, adjust.maxBottomG);
+        printf("B   %4d         %4d       %4d            %4d.        \n", adjust.light.b1, adjust.maxTopB, adjust.light.b2, adjust.maxBottomB);
+        printf("IR  %4d         %4d       %4d            %4d.        \n", adjust.light.ir1, adjust.maxTopIR, adjust.light.ir2, adjust.maxBottomIR);
+
+    }
+
+    struct LightAdjustment adjustB = adjust;
+    LightAdjustmentGoToAim(&adjustA, &adjustB, &adjust);
+    /* Extend end */
+
     do {
         VideoPort videoPort;
         videoPort.Open(VIDEO_PORT_PATH, O_RDWR);
@@ -439,4 +504,116 @@ void LightAdjust(int dpi, char color) {
 
     LightAdjustmentSave(&adjust);
     LightAdjustmentDeInit(&adjust);
+}
+
+int LightAdjustmentPreJudge(struct LightAdjustment *handler) {
+    int retval = 0;
+    int edge = 250;
+
+    printf("    top light   top max   bottom light   bottom max.\n");
+    printf("R   %4d         %4d       %4d            %4d.        \n", handler->light.r1, handler->maxTopR, handler->light.r2, handler->maxBottomR);
+    printf("G   %4d         %4d       %4d            %4d.        \n", handler->light.g1, handler->maxTopG, handler->light.g2, handler->maxBottomG);
+    printf("B   %4d         %4d       %4d            %4d.        \n", handler->light.b1, handler->maxTopB, handler->light.b2, handler->maxBottomB);
+    printf("IR  %4d         %4d       %4d            %4d.        \n", handler->light.ir1, handler->maxTopIR, handler->light.ir2, handler->maxBottomIR);
+
+    switch(handler->color) {
+        case 'C':
+            if (handler->maxTopR <= edge)
+                retval++;
+            else
+                handler->light.r1 /= 2;
+
+            if (handler->maxTopG <= edge)
+                retval++;
+            else
+                handler->light.g1 /= 2;
+
+            if (handler->maxTopB <= edge)
+                retval++;
+            else
+                handler->light.b1 /= 2;
+
+            if (handler->maxBottomR <= edge)
+                retval++;
+            else
+                handler->light.r2 /= 2;
+
+            if (handler->maxBottomG <= edge)
+                retval++;
+            else
+                handler->light.g2 /= 2;
+
+            if (handler->maxBottomB <= edge)
+                retval++;
+            else
+                handler->light.b2 /= 2;
+
+            if (retval == 6)
+                retval = 1;
+            else
+                retval = 0;
+            break;
+        case 'G':
+            if (handler->maxTopR <= edge)
+                retval++;
+            else {
+                handler->light.r1 /= 2;
+                handler->light.g1 = (unsigned short) (handler->light.r1 * 0.8);
+                handler->light.b1 = (unsigned short) (handler->light.r1 * 0.6);
+            }
+
+            if (handler->maxBottomR <= edge)
+                retval++;
+            else {
+                handler->light.r2 /= 2;
+                handler->light.g2 = (unsigned short) (handler->light.r2 * 0.8);
+                handler->light.b2 = (unsigned short) (handler->light.r2 * 0.6);
+            }
+
+            if (retval == 2)
+                retval = 1;
+            else
+                retval = 0;
+            break;
+        default:
+            break;
+    }
+
+    return retval;
+}
+
+void LightAdjustmentGoToAim(struct LightAdjustment *adjustA, struct LightAdjustment *adjustB, struct LightAdjustment *aim) {
+    switch (aim->color) {
+        case 'C':
+            aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim);
+            aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim);
+            aim->light.g1 = LightAdjustmentCalculateAim(adjustA->light.g1, adjustA->maxTopG, adjustB->light.g1, adjustB->maxTopG, aim->aim);
+            aim->light.g2 = LightAdjustmentCalculateAim(adjustA->light.g2, adjustA->maxBottomG, adjustB->light.g2, adjustB->maxBottomG, aim->aim);
+            aim->light.b1 = LightAdjustmentCalculateAim(adjustA->light.b1, adjustA->maxTopB, adjustB->light.b1, adjustB->maxTopR, aim->aim);
+            aim->light.b2 = LightAdjustmentCalculateAim(adjustA->light.b2, adjustA->maxBottomB, adjustB->light.b2, adjustB->maxBottomR, aim->aim);
+            break;
+        case 'G':
+            aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim);
+            aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim);
+            aim->light.g1 = (unsigned short) (aim->light.r1 * 0.8);
+            aim->light.g2 = (unsigned short) (aim->light.r2 * 0.8);
+            aim->light.b1 = (unsigned short) (aim->light.r1 * 0.6);
+            aim->light.b2 = (unsigned short) (aim->light.r2 * 0.8);
+            break;
+        default:
+            break;
+    }
+
+}
+
+unsigned short LightAdjustmentCalculateAim(unsigned short l1, unsigned char m1, unsigned short l2, unsigned char m2, unsigned char m3) {
+    float x1 = l1, y1 = m1;
+    float x2 = l2, y2 = m2;
+    float x3, y3 = m3;
+
+    float k = (y1 - y2) / (x1 - x2);
+    float b = y1 - k * x1;
+
+    x3 = (y3 - b) / k;
+    return (unsigned short)x3;
 }
