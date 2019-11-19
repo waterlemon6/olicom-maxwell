@@ -274,6 +274,13 @@ void VideoPortSetScanMode(int dpi, char color) {
     videoPort.WriteLightPara(light);
 
     struct Correction correction = CorrectionAdjustLoad(dpi, color);
+    /**
+      * Extend begin.
+      */
+    GlobalCorrectionDeepCopy(correction);
+    /**
+      * Extend end.
+      */
     if (correction.enable)
         videoPort.SetVideoMode(VIDEO_MODE_NORMAL);
     else

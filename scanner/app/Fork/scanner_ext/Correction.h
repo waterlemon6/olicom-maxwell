@@ -2,6 +2,7 @@
 #define __CORRECTION_H__
 
 #include "VideoPort.h"
+#include "Entrance.h"
 
 #define LIGHT_STANDARD_UP 255
 #define LIGHT_STANDARD_DOWN 64
@@ -31,5 +32,9 @@ void CorrectionAdjustNoPaper(int dpi, char color, int videoPortOffset);
 
 bool CorrectionGetEdge(int dpi, char color, unsigned short *edge);
 void CorrectionChannelGetEdge(const unsigned char *channel, int width, unsigned short cisEdge, unsigned short *edge);
+
+void GlobalCorrectionInit();
+void GlobalCorrectionDeepCopy(struct Correction &correction);
+void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum Page page);
 
 #endif

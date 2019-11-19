@@ -432,7 +432,9 @@ void LightAdjust(int dpi, char color) {
     LightAdjustmentInit(&adjust, dpi, color);
     adjust.light.enable = true;
 
-    /* Extend begin */
+    /**
+      * Extend begin.
+      */
     switch (color) {
         case 'C':
             adjust.light.r2 = adjust.light.r1 = adjust.maxLight;
@@ -498,8 +500,9 @@ void LightAdjust(int dpi, char color) {
     printf("G   %f - %f\n", adjust.pTopG, adjust.pBottomG);
     printf("B   %f - %f\n", adjust.pTopB, adjust.pBottomB);
     printf("IR  %f - %f\n", adjust.pTopIR, adjust.pBottomIR);
-
-    /* Extend end */
+    /**
+      * Extend end.
+      */
 
     do {
         VideoPort videoPort;

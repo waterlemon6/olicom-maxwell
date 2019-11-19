@@ -139,6 +139,14 @@ enum ExitEvent MainProcess(int dpi, char color, int videoPortOffset, char backdo
     videoPort.Close();
 
     /**
+      * Extend begin.
+      */
+    GlobalCorrectionInit();
+    /**
+      * Extend end.
+      */
+
+    /**
       * Applications Initialization.
       */
     cout << "-------Olicom-------" << endl;

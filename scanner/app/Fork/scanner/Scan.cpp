@@ -12,6 +12,7 @@
 #include "VideoCore.h"
 #include "PrinterDevice.h"
 #include "ColorRemap.h"
+#include "Correction.h"
 
 using namespace std;
 
@@ -46,6 +47,7 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
     videoCore.Activate(videoPort.GetOriginImagePos());
 
     //videoPort.SetVideoMode(VIDEO_MODE_GRADIENT);
+    videoPort.SetVideoMode(VIDEO_MODE_NO_CORRECTION);
     videoPort.StartScan((unsigned short)videoCore.GetFrame());
     videoCore.UpdateFrame();
 
@@ -102,6 +104,13 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
                 if (image[i].page) {
                     if (!imageSlice[i].empty()) {
                         line = imageSlice[i].front();
+                        /**
+                         * Extend begin.
+                         */
+                        GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                        /**
+                          * Extend end.
+                          */
                         videoCore.colorRemap(line, arrange, depth, image[i].leftEdge, image[i].rightEdge, VIDEO_PORT_WIDTH);
                         pthread_mutex_lock(&mutexSendPicture[i]);
                         jpeg[i].WriteScanLines(arrange);
@@ -122,6 +131,13 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
         if (image[i].page) {
             while (!imageSlice[i].empty()) {
                 line = imageSlice[i].front();
+                /**
+                  * Extend begin.
+                  */
+                //GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                /**
+                  * Extend end.
+                  */
                 videoCore.colorRemap(line, arrange, depth, image[i].leftEdge, image[i].rightEdge, VIDEO_PORT_WIDTH);
                 pthread_mutex_lock(&mutexSendPicture[i]);
                 jpeg[i].WriteScanLines(arrange);

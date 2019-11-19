@@ -5,6 +5,8 @@
 #include "VideoCore.h"
 #include "Correction.h"
 
+struct Correction globalCorrection {};
+
 void VerticalSample(unsigned char *src, unsigned char *dst, int width, int height, int depth)
 {
     for(int col = 0; col < width; col++) {
@@ -411,4 +413,81 @@ void CorrectionChannelGetEdge(const unsigned char *channel, int width, unsigned 
 
     for (i = width / 2 - 1 - cisEdge; i >= cisEdge && (!channel[i] || !channel[i - 1]); i--);
     edge[3] = (unsigned short)i;
+}
+
+void GlobalCorrectionInit() {
+    globalCorrection = CorrectionAdjustLoad(600, 'C');
+}
+
+void GlobalCorrectionDeepCopy(struct Correction &correction) {
+    printf("Deep copy %d.\n", correction.width);
+    unsigned short width = correction.width;
+    globalCorrection.width = correction.width;
+    globalCorrection.enable = correction.enable;
+    globalCorrection.channel = correction.channel;
+    memcpy(globalCorrection.RK, correction.RK, width);
+    memcpy(globalCorrection.RB, correction.RB, width);
+    memcpy(globalCorrection.GK, correction.GK, width);
+    memcpy(globalCorrection.GB, correction.GB, width);
+    memcpy(globalCorrection.BK, correction.BK, width);
+    memcpy(globalCorrection.BB, correction.BB, width);
+}
+
+void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum Page page) {
+    int value, K, B;
+    int corrL = 0, dataL = 0, dataR = 0;
+
+    if (page == PAGE_OBVERSE_SIDE) {
+        corrL = globalCorrection.width / 2 + 4;
+        dataL = 0;
+        dataR = globalCorrection.width / 2;
+    }
+    else if (page == PAGE_OPPOSITE_SIDE) {
+        corrL = 4;
+        dataL = 0;
+        dataR = globalCorrection.width / 2;
+    }
+
+    if (depth == 3) {
+        unsigned char *srcB = src;
+        unsigned char *srcR = src + offset;
+        unsigned char *srcG = src + offset * 2;
+
+        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+            value = *(srcB + i);
+            K = globalCorrection.BK[j];
+            B = globalCorrection.BB[j];
+
+            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            *(srcB + i) = (unsigned char)(value < 255 ? value : 255);
+        }
+
+        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+            value = *(srcR + i);
+            K = globalCorrection.RK[j];
+            B = globalCorrection.RB[j];
+
+            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            *(srcR + i) = (unsigned char)(value < 255 ? value : 255);
+        }
+
+        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+            value = *(srcG + i);
+            K = globalCorrection.GK[j];
+            B = globalCorrection.GB[j];
+
+            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            *(srcG + i) = (unsigned char)(value < 255 ? value : 255);
+        };
+    }
+    else if (depth == 1) {
+        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+            value = *(src + i);
+            K = globalCorrection.RK[j];
+            B = globalCorrection.RB[j];
+
+            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            *(src + i) = (unsigned char)(value < 255 ? value : 255);
+        }
+    }
 }
