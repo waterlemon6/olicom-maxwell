@@ -275,7 +275,7 @@ void VideoPortSetScanMode(int dpi, char color) {
 
     struct Correction correction = CorrectionAdjustLoad(dpi, color);
     /**
-      * Extend begin.
+      * Extend begin. When update light and correction, cancel it.
       */
     GlobalCorrectionDeepCopy(correction);
     /**

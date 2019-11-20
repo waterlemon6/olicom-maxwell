@@ -28,9 +28,10 @@ void CorrectionMix(unsigned char *brightK, unsigned char *darkB, int length)
             darkB[i] = 0;
         }
         else {
-            float temp = LIGHT_STANDARD_UP / ((float)(brightK[i] - darkB[i])) - 1;
+            float temp = (LIGHT_STANDARD_UP / ((float)(brightK[i] - darkB[i])) - 1) * 64;
             temp = temp > 0 ? temp : 0;
-            brightK[i] = (unsigned char)(temp * 64.0f);
+            temp = temp < 255 ? temp : 255;
+            brightK[i] = (unsigned char)temp;
         }
     }
 }
@@ -420,7 +421,6 @@ void GlobalCorrectionInit() {
 }
 
 void GlobalCorrectionDeepCopy(struct Correction &correction) {
-    printf("Deep copy %d.\n", correction.width);
     unsigned short width = correction.width;
     globalCorrection.width = correction.width;
     globalCorrection.enable = correction.enable;
@@ -431,6 +431,12 @@ void GlobalCorrectionDeepCopy(struct Correction &correction) {
     memcpy(globalCorrection.GB, correction.GB, width);
     memcpy(globalCorrection.BK, correction.BK, width);
     memcpy(globalCorrection.BB, correction.BB, width);
+
+    for (int i = 0; i < width; i++) {
+        globalCorrection.RK[i] = (unsigned char)(globalCorrection.RK[i] < 192 ? globalCorrection.RK[i] + 64 : 255);
+        globalCorrection.GK[i] = (unsigned char)(globalCorrection.GK[i] < 192 ? globalCorrection.GK[i] + 64 : 255);
+        globalCorrection.BK[i] = (unsigned char)(globalCorrection.BK[i] < 192 ? globalCorrection.BK[i] + 64 : 255);
+    }
 }
 
 void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum Page page) {
@@ -458,7 +464,7 @@ void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum P
             K = globalCorrection.BK[j];
             B = globalCorrection.BB[j];
 
-            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            value = K * (value > B ? value - B : 0) / 64;
             *(srcB + i) = (unsigned char)(value < 255 ? value : 255);
         }
 
@@ -467,7 +473,7 @@ void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum P
             K = globalCorrection.RK[j];
             B = globalCorrection.RB[j];
 
-            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            value = K * (value > B ? value - B : 0) / 64;
             *(srcR + i) = (unsigned char)(value < 255 ? value : 255);
         }
 
@@ -476,7 +482,7 @@ void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum P
             K = globalCorrection.GK[j];
             B = globalCorrection.GB[j];
 
-            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            value = K * (value > B ? value - B : 0) / 64;
             *(srcG + i) = (unsigned char)(value < 255 ? value : 255);
         };
     }
@@ -486,7 +492,7 @@ void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum P
             K = globalCorrection.RK[j];
             B = globalCorrection.RB[j];
 
-            value = (64 + K) * (value > B ? value - B : 0) / 64;
+            value = K * (value > B ? value - B : 0) / 64;
             *(src + i) = (unsigned char)(value < 255 ? value : 255);
         }
     }
