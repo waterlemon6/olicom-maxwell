@@ -3,7 +3,7 @@ project(Distance)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_COMPILER aarch64-linux-gnu-g++)
-set(CMAKE_CXx_FLAGS "-O2")
+set(CMAKE_CXX_FLAGS "-O2")
 
 link_libraries(pthread)
 link_libraries(/home/waterlemon/jpeg/libjpeg-turbo-2.0.1/a64-64bit/a64/libjpeg.a)

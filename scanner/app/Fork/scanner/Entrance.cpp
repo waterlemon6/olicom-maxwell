@@ -66,7 +66,7 @@ void Scanner::SetCompressPage(unsigned char data) {
             image_[1].page = PAGE_OPPOSITE_SIDE;
             break;
         case 0x03:
-            image_[0].page = PAGE_NULL;
+            image_[0].page = PAGE_OBVERSE_SIDE; // Changed!
             image_[1].page = PAGE_OPPOSITE_SIDE;
             break;
         default:

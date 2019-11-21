@@ -4,6 +4,7 @@
 #include <fstream>
 #include <queue>
 #include <cstring>
+#include <omp.h>
 
 #include "main.h"
 #include "Scan.h"
@@ -107,8 +108,8 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
                         /**
                          * Extend begin.
                          */
-                        GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
-                        //GlobalCorrectionCalculate_NEON(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                        //GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                        GlobalCorrectionCalculate_NEON(line, depth, VIDEO_PORT_WIDTH, image[i].page);
                         /**
                           * Extend end.
                           */
@@ -135,8 +136,8 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
                 /**
                   * Extend begin.
                   */
-                GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
-                //GlobalCorrectionCalculate_NEON(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                //GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                GlobalCorrectionCalculate_NEON(line, depth, VIDEO_PORT_WIDTH, image[i].page);
                 /**
                   * Extend end.
                   */
@@ -155,10 +156,16 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
     /**
       * Exit.
       */
+    videoCore.Activate(videoPort.GetOriginImagePos()); // Changed!
     pthread_join(threadSendPicture, nullptr);
     videoPort.StopScan();
     videoPort.Close();
     delete [] arrange;
+
+#pragma omp parallel for
+    for(int i = 0; i < 10; i++)
+        printf("%d ", i);
+    printf("\n");
 }
 
 void *SendPicture(void* jpeg) {
