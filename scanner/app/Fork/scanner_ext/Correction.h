@@ -34,7 +34,8 @@ bool CorrectionGetEdge(int dpi, char color, unsigned short *edge);
 void CorrectionChannelGetEdge(const unsigned char *channel, int width, unsigned short cisEdge, unsigned short *edge);
 
 void GlobalCorrectionInit();
-void GlobalCorrectionDeepCopy(struct Correction &correction);
+void GlobalCorrectionDeepCopy(struct Correction &correction, char color);
 void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum Page page);
+void GlobalCorrectionCalculate_NEON(unsigned char *src, int depth, int offset, enum Page page);
 
 #endif

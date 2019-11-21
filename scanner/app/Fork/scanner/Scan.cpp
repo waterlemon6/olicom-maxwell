@@ -108,6 +108,7 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
                          * Extend begin.
                          */
                         GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                        //GlobalCorrectionCalculate_NEON(line, depth, VIDEO_PORT_WIDTH, image[i].page);
                         /**
                           * Extend end.
                           */
@@ -134,7 +135,8 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
                 /**
                   * Extend begin.
                   */
-                //GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                GlobalCorrectionCalculate(line, depth, VIDEO_PORT_WIDTH, image[i].page);
+                //GlobalCorrectionCalculate_NEON(line, depth, VIDEO_PORT_WIDTH, image[i].page);
                 /**
                   * Extend end.
                   */

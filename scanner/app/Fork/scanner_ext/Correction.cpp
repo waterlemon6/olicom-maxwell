@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <cstring>
 #include <fcntl.h>
+#include <arm_neon.h>
 #include "VideoCore.h"
 #include "Correction.h"
 
@@ -420,80 +421,142 @@ void GlobalCorrectionInit() {
     globalCorrection = CorrectionAdjustLoad(600, 'C');
 }
 
-void GlobalCorrectionDeepCopy(struct Correction &correction) {
+void GlobalCorrectionDeepCopy(struct Correction &correction, char color) {
     unsigned short width = correction.width;
     globalCorrection.width = correction.width;
     globalCorrection.enable = correction.enable;
     globalCorrection.channel = correction.channel;
     memcpy(globalCorrection.RK, correction.RK, width);
     memcpy(globalCorrection.RB, correction.RB, width);
-    memcpy(globalCorrection.GK, correction.GK, width);
-    memcpy(globalCorrection.GB, correction.GB, width);
-    memcpy(globalCorrection.BK, correction.BK, width);
-    memcpy(globalCorrection.BB, correction.BB, width);
+    if (color == 'C') {
+        memcpy(globalCorrection.GK, correction.GK, width);
+        memcpy(globalCorrection.GB, correction.GB, width);
+        memcpy(globalCorrection.BK, correction.BK, width);
+        memcpy(globalCorrection.BB, correction.BB, width);
+    }
 
     for (int i = 0; i < width; i++) {
         globalCorrection.RK[i] = (unsigned char)(globalCorrection.RK[i] < 192 ? globalCorrection.RK[i] + 64 : 255);
-        globalCorrection.GK[i] = (unsigned char)(globalCorrection.GK[i] < 192 ? globalCorrection.GK[i] + 64 : 255);
-        globalCorrection.BK[i] = (unsigned char)(globalCorrection.BK[i] < 192 ? globalCorrection.BK[i] + 64 : 255);
+        if (color == 'C') {
+            globalCorrection.GK[i] = (unsigned char)(globalCorrection.GK[i] < 192 ? globalCorrection.GK[i] + 64 : 255);
+            globalCorrection.BK[i] = (unsigned char)(globalCorrection.BK[i] < 192 ? globalCorrection.BK[i] + 64 : 255);
+        }
     }
 }
 
 void GlobalCorrectionCalculate(unsigned char *src, int depth, int offset, enum Page page) {
     int value, K, B;
-    int corrL = 0, dataL = 0, dataR = 0;
+    int corrL = 4; // Video port offset
 
-    if (page == PAGE_OBVERSE_SIDE) {
-        corrL = globalCorrection.width / 2 + 4;
-        dataL = 0;
-        dataR = globalCorrection.width / 2;
-    }
-    else if (page == PAGE_OPPOSITE_SIDE) {
-        corrL = 4;
-        dataL = 0;
-        dataR = globalCorrection.width / 2;
-    }
+    if (page == PAGE_OBVERSE_SIDE)
+        corrL += globalCorrection.width / 2;
 
     if (depth == 3) {
         unsigned char *srcB = src;
         unsigned char *srcR = src + offset;
         unsigned char *srcG = src + offset * 2;
 
-        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+        for (int i = 0; i < globalCorrection.width / 2; i++) {
             value = *(srcB + i);
-            K = globalCorrection.BK[j];
-            B = globalCorrection.BB[j];
+            K = globalCorrection.BK[corrL + i];
+            B = globalCorrection.BB[corrL + i];
 
             value = K * (value > B ? value - B : 0) / 64;
             *(srcB + i) = (unsigned char)(value < 255 ? value : 255);
         }
 
-        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+        for (int i = 0; i < globalCorrection.width / 2; i++) {
             value = *(srcR + i);
-            K = globalCorrection.RK[j];
-            B = globalCorrection.RB[j];
+            K = globalCorrection.RK[corrL + i];
+            B = globalCorrection.RB[corrL + i];
 
             value = K * (value > B ? value - B : 0) / 64;
             *(srcR + i) = (unsigned char)(value < 255 ? value : 255);
         }
 
-        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+        for (int i = 0; i < globalCorrection.width / 2; i++) {
             value = *(srcG + i);
-            K = globalCorrection.GK[j];
-            B = globalCorrection.GB[j];
+            K = globalCorrection.GK[corrL + i];
+            B = globalCorrection.GB[corrL + i];
 
             value = K * (value > B ? value - B : 0) / 64;
             *(srcG + i) = (unsigned char)(value < 255 ? value : 255);
         };
     }
     else if (depth == 1) {
-        for (int  i = dataL, j = corrL; i < dataR; i++, j++) {
+        for (int i = 0; i < globalCorrection.width / 2; i++) {
             value = *(src + i);
-            K = globalCorrection.RK[j];
-            B = globalCorrection.RB[j];
+            K = globalCorrection.RK[corrL + i];
+            B = globalCorrection.RB[corrL + i];
 
             value = K * (value > B ? value - B : 0) / 64;
             *(src + i) = (unsigned char)(value < 255 ? value : 255);
+        }
+    }
+}
+
+void GlobalCorrectionCalculate_NEON(unsigned char *src, int depth, int offset, enum Page page) {
+    uint8x8_t nk, nb, nv;
+    uint16x8_t nvs, nls = vdupq_n_u16(255 << 6);
+    int corrL = 4; // Video port offset
+
+    if (page == PAGE_OBVERSE_SIDE)
+        corrL += globalCorrection.width / 2;
+
+    int neon_width = ((globalCorrection.width / 2) / 8) * 8;
+    int normal_width = globalCorrection.width / 2 - neon_width; // Actually it's always zero in this kind of CIS.
+    if (depth == 3) {
+        unsigned char *srcB = src;
+        unsigned char *srcR = src + offset;
+        unsigned char *srcG = src + offset * 2;
+
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(srcB + i);
+            nk = vld1_u8(globalCorrection.BK + corrL + i);
+            nb = vld1_u8(globalCorrection.BB + corrL + i);
+
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(srcB + i, nv);
+        }
+
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(srcR + i);
+            nk = vld1_u8(globalCorrection.RK + corrL + i);
+            nb = vld1_u8(globalCorrection.RB + corrL + i);
+
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(srcR + i, nv);
+        }
+
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(srcG + i);
+            nk = vld1_u8(globalCorrection.GK + corrL + i);
+            nb = vld1_u8(globalCorrection.GB + corrL + i);
+
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(srcG + i, nv);
+        }
+    }
+    else if(depth == 1) {
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(src + i);
+            nk = vld1_u8(globalCorrection.RK + corrL + i);
+            nb = vld1_u8(globalCorrection.RB + corrL + i);
+
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(src + i, nv);
         }
     }
 }

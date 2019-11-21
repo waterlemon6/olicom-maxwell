@@ -277,7 +277,7 @@ void VideoPortSetScanMode(int dpi, char color) {
     /**
       * Extend begin. When update light and correction, cancel it.
       */
-    GlobalCorrectionDeepCopy(correction);
+    GlobalCorrectionDeepCopy(correction, color);
     /**
       * Extend end.
       */
