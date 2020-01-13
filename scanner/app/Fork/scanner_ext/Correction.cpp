@@ -510,50 +510,41 @@ void GlobalCorrectionCalculate_NEON(unsigned char *src, int depth, int offset, e
         unsigned char *srcB = src;
         unsigned char *srcR = src + offset;
         unsigned char *srcG = src + offset * 2;
-#pragma omp parallel sections
-        {
-#pragma omp section
-            {
-                for (int i = 0; i < neon_width; i += 8) {
-                    nv = vld1_u8(srcB + i);
-                    nk = vld1_u8(globalCorrection.BK + corrL + i);
-                    nb = vld1_u8(globalCorrection.BB + corrL + i);
 
-                    nv = vqsub_u8(nv, nb);
-                    nvs = vmull_u8(nv, nk);
-                    nvs = vminq_u16(nvs, nls);
-                    nv = vshrn_n_u16(nvs, 6);
-                    vst1_u8(srcB + i, nv);
-                }
-            }
-#pragma omp section
-            {
-                for (int i = 0; i < neon_width; i += 8) {
-                    nv = vld1_u8(srcR + i);
-                    nk = vld1_u8(globalCorrection.RK + corrL + i);
-                    nb = vld1_u8(globalCorrection.RB + corrL + i);
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(srcB + i);
+            nk = vld1_u8(globalCorrection.BK + corrL + i);
+            nb = vld1_u8(globalCorrection.BB + corrL + i);
 
-                    nv = vqsub_u8(nv, nb);
-                    nvs = vmull_u8(nv, nk);
-                    nvs = vminq_u16(nvs, nls);
-                    nv = vshrn_n_u16(nvs, 6);
-                    vst1_u8(srcR + i, nv);
-                }
-            }
-#pragma omp section
-            {
-                for (int i = 0; i < neon_width; i += 8) {
-                    nv = vld1_u8(srcG + i);
-                    nk = vld1_u8(globalCorrection.GK + corrL + i);
-                    nb = vld1_u8(globalCorrection.GB + corrL + i);
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(srcB + i, nv);
+        }
 
-                    nv = vqsub_u8(nv, nb);
-                    nvs = vmull_u8(nv, nk);
-                    nvs = vminq_u16(nvs, nls);
-                    nv = vshrn_n_u16(nvs, 6);
-                    vst1_u8(srcG + i, nv);
-                }
-            }
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(srcR + i);
+            nk = vld1_u8(globalCorrection.RK + corrL + i);
+            nb = vld1_u8(globalCorrection.RB + corrL + i);
+
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(srcR + i, nv);
+        }
+
+        for (int i = 0; i < neon_width; i += 8) {
+            nv = vld1_u8(srcG + i);
+            nk = vld1_u8(globalCorrection.GK + corrL + i);
+            nb = vld1_u8(globalCorrection.GB + corrL + i);
+
+            nv = vqsub_u8(nv, nb);
+            nvs = vmull_u8(nv, nk);
+            nvs = vminq_u16(nvs, nls);
+            nv = vshrn_n_u16(nvs, 6);
+            vst1_u8(srcG + i, nv);
         }
     }
     else if(depth == 1) {

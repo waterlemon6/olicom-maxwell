@@ -156,16 +156,11 @@ void Scan(int dpi, int depth, struct ImageSize *image, int quality, int cmd)
     /**
       * Exit.
       */
-    videoCore.Activate(videoPort.GetOriginImagePos()); // Changed!
+    videoCore.Activate(videoPort.GetOriginImagePos()); // Changed to show time!
     pthread_join(threadSendPicture, nullptr);
     videoPort.StopScan();
     videoPort.Close();
     delete [] arrange;
-
-#pragma omp parallel for
-    for(int i = 0; i < 10; i++)
-        printf("%d ", i);
-    printf("\n");
 }
 
 void *SendPicture(void* jpeg) {

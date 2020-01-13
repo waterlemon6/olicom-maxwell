@@ -606,8 +606,8 @@ void LightAdjustmentGoToAim(struct LightAdjustment *adjustA, struct LightAdjustm
             aim->light.r2 = LightAdjustmentCalculateAim(adjustA->light.r2, adjustA->maxBottomR, adjustB->light.r2, adjustB->maxBottomR, aim->aim, &aim->pBottomR);
             aim->light.g1 = LightAdjustmentCalculateAim(adjustA->light.g1, adjustA->maxTopG, adjustB->light.g1, adjustB->maxTopG, aim->aim, &aim->pTopG);
             aim->light.g2 = LightAdjustmentCalculateAim(adjustA->light.g2, adjustA->maxBottomG, adjustB->light.g2, adjustB->maxBottomG, aim->aim, &aim->pBottomG);
-            aim->light.b1 = LightAdjustmentCalculateAim(adjustA->light.b1, adjustA->maxTopB, adjustB->light.b1, adjustB->maxTopR, aim->aim, &aim->pTopB);
-            aim->light.b2 = LightAdjustmentCalculateAim(adjustA->light.b2, adjustA->maxBottomB, adjustB->light.b2, adjustB->maxBottomR, aim->aim, &aim->pBottomB);
+            aim->light.b1 = LightAdjustmentCalculateAim(adjustA->light.b1, adjustA->maxTopB, adjustB->light.b1, adjustB->maxTopB, aim->aim, &aim->pTopB);
+            aim->light.b2 = LightAdjustmentCalculateAim(adjustA->light.b2, adjustA->maxBottomB, adjustB->light.b2, adjustB->maxBottomB, aim->aim, &aim->pBottomB);
             break;
         case 'G':
             aim->light.r1 = LightAdjustmentCalculateAim(adjustA->light.r1, adjustA->maxTopR, adjustB->light.r1, adjustB->maxTopR, aim->aim, &aim->pTopR);
